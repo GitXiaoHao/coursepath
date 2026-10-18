@@ -83,10 +83,14 @@ blockquote { margin: 2mm 0 3mm; padding: 1.5mm 3mm; border-left: 2.5pt solid #c9
              background: #fafbfc; color: #333; }
 blockquote p { margin: 0 0 1.2mm; }
 hr { border: 0; border-top: 0.6pt solid #d0d7de; margin: 5mm 0; }
-img { max-width: 100%; }
+img { max-width: 68%; max-height: 92mm; width: auto; display: block; margin: 1.5mm auto; break-inside: avoid; page-break-inside: avoid; }
 """
 
+# HTML 落在 report/.build/ 下，图片按 report/ 相对路径书写，用 <base> 修正解析基准
+BASE_HREF = ROOT.as_uri() + "/"
+
 HEAD = ('<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">'
+        f'<base href="{BASE_HREF}">'
         '<title>课径 · 可核算的培养方案问答 · 技术报告</title>'
         f"<style>{CSS}</style></head><body>")
 
@@ -103,6 +107,8 @@ def render(md_text: str) -> str:
     first_h1 = body.find("</h1>")
     if body.startswith("<h1") and first_h1 != -1:
         body = body[first_h1 + len("</h1>"):].lstrip()
+    # 图片统一限高（Chromium 对 max-height + width:auto 不生效，需显式高度）
+    body = body.replace("<img ", '<img style="height:104mm;width:auto;" ')
     return HEAD + COVER + body + TAIL
 
 
