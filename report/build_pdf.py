@@ -119,14 +119,11 @@ def find_edge() -> Path:
     raise SystemExit("未找到 Microsoft Edge，无法打印 PDF")
 
 
-def build(out: Path | None = None) -> Path:
-    target = out or OUT_PDF
+def print_html(html: str, target: Path, html_path: Path) -> Path:
+    """把 HTML 用 Edge 无头打印成 PDF。target 必须是绝对路径（相对路径 Edge 会报找不到路径）。"""
     target.parent.mkdir(parents=True, exist_ok=True)
-    md_text = SRC.read_text(encoding="utf-8")
-    html = render(md_text)
-    OUT_HTML.parent.mkdir(parents=True, exist_ok=True)
-    OUT_HTML.write_text(html, encoding="utf-8", newline="\n")
-
+    html_path.parent.mkdir(parents=True, exist_ok=True)
+    html_path.write_text(html, encoding="utf-8", newline="\n")
     edge = find_edge()
     if target.exists():
         target.unlink()
@@ -141,12 +138,25 @@ def build(out: Path | None = None) -> Path:
             "--no-pdf-header-footer",
             "--print-to-pdf-no-header",
             f"--print-to-pdf={target.resolve()}",
-            OUT_HTML.as_uri(),
+            html_path.as_uri(),
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     if not target.exists():
         raise SystemExit(f"PDF 生成失败（edge exit={proc.returncode}）:\n{proc.stderr[-2000:]}")
     return target
+
+
+def build(out: Path | None = None) -> Path:
+    target = out or OUT_PDF
+    return print_html(render(SRC.read_text(encoding="utf-8")), target, OUT_HTML)
+
+
+def build_annex(md_path: Path, out_pdf: Path, with_cover: bool = False) -> Path:
+    """把任意 Markdown 转成 PDF（用于《开源及第三方资源使用清单》等附件）。"""
+    html = render(md_path.read_text(encoding="utf-8"))
+    if not with_cover:
+        html = html.replace(COVER, "")
+    return print_html(html, out_pdf, ROOT / ".build" / (out_pdf.stem + ".html"))
 
 
 def report(path: Path | None = None) -> int:

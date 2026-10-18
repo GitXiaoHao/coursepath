@@ -26,3 +26,6 @@ tmp/
 *.log
 video/.build/
 report/.build/
+
+# 提交材料打包产物（含视频，不入库）
+提交材料/
