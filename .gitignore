@@ -24,3 +24,5 @@ deploy/**/.env
 .explore/
 tmp/
 *.log
+video/.build/
+report/.build/
