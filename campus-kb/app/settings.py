@@ -33,6 +33,12 @@ class Settings:
             os.environ.get("KB_CORPUS", str(BASE_DIR / "data" / "samples" / "chunks.jsonl"))
         )
     )
+    #: 培养方案路径（JSON，结构化后的）
+    plan_path: Path = field(
+        default_factory=lambda: Path(
+            os.environ.get("KB_PLAN", str(BASE_DIR / "data" / "samples" / "plan.json"))
+        )
+    )
     #: 融合策略：weighted | rrf
     fusion: str = field(default_factory=lambda: os.environ.get("KB_FUSION", "weighted"))
     #: 稠密通道权重（fusion=weighted 时生效）

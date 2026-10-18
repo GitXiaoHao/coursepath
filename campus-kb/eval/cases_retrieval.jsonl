@@ -1,0 +1,12 @@
+{"id": "R1", "query": "编译原理需要先修哪些课", "expect": {"table_kind": "prereq", "course_code": "CS305"}}
+{"id": "R2", "query": "操作系统的选课条件是什么", "expect": {"table_kind": "prereq", "course_code": "CS303"}}
+{"id": "R3", "query": "数据结构与算法几个学分", "expect": {"table_kind": "courses", "course_code": "CS201"}}
+{"id": "R4", "query": "毕业设计（论文）什么时候修", "expect": {"table_kind": "courses", "course_code": "CS401"}}
+{"id": "R5", "query": "专业核心课模块要求多少学分", "expect": {"table_kind": "modules", "module": "专业核心课"}}
+{"id": "R6", "query": "毕业总学分是多少", "expect": {"table_kind": "modules", "module": "合计"}}
+{"id": "R7", "query": "机器学习导论是选修课还是核心课", "expect": {"table_kind": "courses", "course_code": "EL201"}}
+{"id": "R8", "query": "高等数学占多少学分", "expect": {"table_kind": "courses", "course_code": "GE101"}}
+{"id": "R9", "query": "实践教学环节包括哪些内容", "expect": {"table_kind": "modules", "module": "实践教学环节"}}
+{"id": "R10", "query": "专业实习在哪一学期开课", "expect": {"table_kind": "courses", "course_code": "CS350"}}
+{"id": "R11", "query": "计算机组成原理的先修课程", "expect": {"table_kind": "prereq", "course_code": "CS202"}}
+{"id": "R12", "query": "软件工程多少学分", "expect": {"table_kind": "courses", "course_code": "CS330"}}

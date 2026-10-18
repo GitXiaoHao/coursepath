@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from core.schema import Chunk
+from core.schema import Chunk, CreditPlan
 
 
 def _flatten(metadata: dict) -> dict:
@@ -54,3 +54,11 @@ def load_chunks(path: str | Path) -> list[Chunk]:
                 )
             )
     return chunks
+
+
+def load_plan(path: str | Path) -> CreditPlan | None:
+    """读取培养方案 JSON；文件不存在返回 ``None``（服务仍可启动，核算接口报配置缺失）。"""
+    file_path = Path(path)
+    if not file_path.is_file():
+        return None
+    return CreditPlan.model_validate_json(file_path.read_text(encoding="utf-8"))

@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Sequence
 
 import jieba
@@ -20,6 +20,7 @@ from rank_bm25 import BM25Plus  # 用 Plus 变体：idf = log((N+1)/df) 恒非�
 
 from core.embeddings import Embedder, NullEmbedder, cosine
 from core.filters import matches
+from core.intent import INTENT_BOOST, preferred_tables
 from core.schema import Chunk
 
 #: 极简停用词，避免"的/了/哪"等虚词主导 BM25。
@@ -108,6 +109,7 @@ class HybridIndex:
         top_k: int = 5,
         score_threshold: float = 0.0,
         metadata_condition: dict | None = None,
+        use_intent: bool = True,
     ) -> list[Hit]:
         if not self.chunks or not query.strip():
             return []
@@ -166,6 +168,17 @@ class HybridIndex:
                         dense=dense_scores[index] if dense_scores else 0.0,
                     )
                 )
+
+        # 3.5) 意图加权：同一门课可能同时出现在「课程设置表」和「先修要求表」，
+        # 纯词法分几乎打平；按问题类型给对应表型轻微加权，只改排序不改召回集合。
+        preferred = preferred_tables(query) if use_intent else frozenset()
+        if preferred:
+            hits = [
+                replace(hit, score=hit.score * INTENT_BOOST)
+                if hit.chunk.metadata.get("table_kind") in preferred
+                else hit
+                for hit in hits
+            ]
 
         # 4) 证据门槛 + 阈值 + 截断
         # 完全没有词法/语义重叠的分块必须剔除：否则归一化后得分为 0、而

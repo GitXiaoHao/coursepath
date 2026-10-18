@@ -11,10 +11,12 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 
+from app.api import course as course_api
 from app.api import retrieval as retrieval_api
 from app.settings import Settings
-from core.corpus import load_chunks
+from core.corpus import load_chunks, load_plan
 from core.index import HybridIndex
+from core.schema import CreditPlan
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,12 +36,20 @@ def build_index(settings: Settings) -> HybridIndex:
     )
 
 
-def create_app(index: HybridIndex | None = None, settings: Settings | None = None) -> FastAPI:
-    """应用工厂：测试时注入内存索引，避免依赖磁盘语料与网络。"""
+def create_app(
+    index: HybridIndex | None = None,
+    settings: Settings | None = None,
+    plan: CreditPlan | None = None,
+) -> FastAPI:
+    """应用工厂：测试时注入内存索引与培养方案，避免依赖磁盘语料与网络。"""
     settings = settings or Settings.from_env()
     if settings.api_key == "dev-key":
         logger.warning("正在使用默认 API Key（dev-key），仅限本地自测；演示环境请设置 KB_API_KEY")
     index = index if index is not None else build_index(settings)
+    if plan is None:
+        plan = load_plan(settings.plan_path)
+    if plan is None:
+        logger.warning("未加载到培养方案（%s），/audit 与 /prereq 将返回配置缺失错误", settings.plan_path)
 
     app = FastAPI(
         title="campus-kb",
@@ -51,8 +61,10 @@ def create_app(index: HybridIndex | None = None, settings: Settings | None = Non
     )
     app.state.settings = settings
     app.state.index = index
+    app.state.plan = plan
 
     app.include_router(retrieval_api.router)
+    app.include_router(course_api.router)
 
     @app.get("/health", tags=["ops"], summary="健康检查")
     def health() -> dict:
@@ -62,6 +74,16 @@ def create_app(index: HybridIndex | None = None, settings: Settings | None = Non
             "knowledge_id": settings.knowledge_id,
             "corpus": str(settings.corpus_path),
             "index": app.state.index.stats(),
+            "plan": (
+                {
+                    "plan_id": app.state.plan.plan_id,
+                    "major": app.state.plan.major,
+                    "courses": len(app.state.plan.courses),
+                    "version": app.state.plan.version,
+                }
+                if app.state.plan is not None
+                else None
+            ),
         }
 
     @app.exception_handler(HTTPException)

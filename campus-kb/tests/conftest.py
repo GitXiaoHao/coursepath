@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.settings import Settings
+from core.corpus import load_plan
 from core.index import HybridIndex
-from core.schema import Chunk
+from core.schema import Chunk, CreditPlan
+
+BASE = Path(__file__).resolve().parent.parent
 
 #: 测试语料：覆盖"与/或"两种先修写法与三个不同模块，便于验证过滤行为。
 CHUNKS = [
@@ -47,6 +52,7 @@ def settings(tmp_path) -> Settings:
         api_key="test-key",
         knowledge_id="k-test",
         corpus_path=tmp_path / "missing.jsonl",
+        plan_path=tmp_path / "missing-plan.json",
     )
 
 
@@ -55,9 +61,17 @@ def index() -> HybridIndex:
     return HybridIndex(CHUNKS)
 
 
+@pytest.fixture(scope="session")
+def plan() -> CreditPlan:
+    """示例培养方案（data/samples/plan.json）：同时充当数据有效性测试。"""
+    loaded = load_plan(BASE / "data" / "samples" / "plan.json")
+    assert loaded is not None, "示例培养方案缺失"
+    return loaded
+
+
 @pytest.fixture()
-def client(settings: Settings, index: HybridIndex) -> TestClient:
-    return TestClient(create_app(index=index, settings=settings))
+def client(settings: Settings, index: HybridIndex, plan: CreditPlan) -> TestClient:
+    return TestClient(create_app(index=index, settings=settings, plan=plan))
 
 
 def payload(query: str = "编译原理 先修要求", **overrides) -> dict:
