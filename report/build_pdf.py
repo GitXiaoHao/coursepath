@@ -52,7 +52,7 @@ CSS = """
 html { -webkit-print-color-adjust: exact; }
 body {
   font-family: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "SimSun", sans-serif;
-  font-size: 10.2pt; line-height: 1.55; color: #1b1b1b; margin: 0;
+  font-size: 10.2pt; line-height: 1.52; color: #1b1b1b; margin: 0;
 }
 .cover { page-break-after: always; padding-top: 46mm; text-align: center; }
 .cover-kicker { font-size: 10pt; color: #555; letter-spacing: .06em; }
@@ -60,7 +60,7 @@ body {
 .cover-sub { font-size: 14pt; color: #333; margin-bottom: 22mm; }
 .cover-meta p { font-size: 10pt; color: #444; margin: 3mm 0; }
 h1 { font-size: 17pt; margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 1.5pt solid #1f6feb; }
-h2 { font-size: 14pt; margin: 8mm 0 3mm; page-break-before: always; page-break-after: avoid; }
+h2 { font-size: 14pt; margin: 11mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 0.8pt solid #d0d7de; page-break-after: avoid; }
 h2:first-of-type { page-break-before: auto; }
 h3 { font-size: 11.6pt; margin: 5mm 0 2mm; page-break-after: avoid; }
 h4 { font-size: 10.6pt; margin: 4mm 0 1.5mm; page-break-after: avoid; }

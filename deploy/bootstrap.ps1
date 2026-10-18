@@ -28,16 +28,21 @@ $composeUrl = 'https://github.com/langgenius/dify.git'
 
 # 原生程序把进度写到 stderr 属正常；$ErrorActionPreference='Stop' 会把它当致命错误，故统一走本函数
 function Invoke-Native {
-    param([Parameter(Mandatory)][string]$Exe, [Parameter(ValueFromRemainingArguments)][string[]]$Args)
+    # 注意：必须用显式数组传参。PowerShell 会把裸 `-d` 当成函数参数（-Debug 前缀）吞掉，
+    # 导致 `docker compose up -d` 变成 `docker compose up`，脚本被前台日志流挂住。
+    param(
+        [Parameter(Mandatory, Position = 0)][string]$Exe,
+        [Parameter(Mandatory, Position = 1)][string[]]$Arguments
+    )
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & $Exe @Args
+        & $Exe @Arguments
         $code = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $prev
     }
-    if ($code -ne 0) { throw "命令失败（exit=$code）：$Exe $($Args -join ' ')" }
+    if ($code -ne 0) { throw "命令失败（exit=$code）：$Exe $($Arguments -join ' ')" }
 }
 function Add-DockerToPath {
     $bin = 'C:\Program Files\Docker\Docker\resources\bin'
@@ -81,7 +86,7 @@ function New-Secret {
 
 Write-Host '[1/5] 检查 Docker...' -ForegroundColor Cyan
 Add-DockerToPath
-$ver = Invoke-Native docker version --format '{{.Server.Version}}'
+$ver = Invoke-Native -Exe docker -Arguments @('version','--format','{{.Server.Version}}')
 Write-Host "      Docker Engine $ver"
 
 Write-Host '[2/5] 准备 Dify 源码（只取 docker 目录）...' -ForegroundColor Cyan
@@ -89,7 +94,7 @@ if (-not (Test-Path $dockerDir)) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $difyRoot) | Out-Null
     & git clone --depth 1 --filter=blob:none --sparse $composeUrl $difyRoot
     Push-Location $difyRoot
-    try { Invoke-Native git sparse-checkout set docker } finally { Pop-Location }
+    try { Invoke-Native -Exe git -Arguments @('sparse-checkout','set','docker') } finally { Pop-Location }
 } else {
     Write-Host '      已存在，跳过克隆'
 }
@@ -116,7 +121,7 @@ if ($SkipUp) { Write-Host '跳过启动（-SkipUp）' -ForegroundColor Yellow; r
 
 Write-Host '[5/5] docker compose up -d ...' -ForegroundColor Cyan
 Push-Location $dockerDir
-try { Invoke-Native docker compose up -d --build } finally { Pop-Location }
+try { Invoke-Native -Exe docker -Arguments @('compose','up','-d','--build') } finally { Pop-Location }
 
 Write-Host ''
 Write-Host '完成。检查：' -ForegroundColor Green
