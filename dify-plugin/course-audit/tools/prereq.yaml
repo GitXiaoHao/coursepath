@@ -1,0 +1,48 @@
+identity:
+  name: "prereq_check"
+  author: "coursepath"
+  label:
+    en_US: "Prerequisite check"
+    zh_Hans: "先修链判定"
+description:
+  human:
+    en_US: "Decide whether a course can be taken now, and list the direct and upstream prerequisites still missing."
+    zh_Hans: "判断某门课现在能否选，并列出还缺的直接先修与更上游先修。"
+  llm: "Given a study-plan JSON, a target course (name or code) and completed courses, evaluate the prerequisite expression (and / or / credits) and return satisfied or the missing blockers, including upstream chains."
+parameters:
+  - name: course
+    type: string
+    required: true
+    label:
+      en_US: "Target course"
+      zh_Hans: "目标课程"
+    human_description:
+      en_US: "Course name or code, e.g. 编译原理 or CS305"
+      zh_Hans: "课程名称或课程代码，例如 编译原理 或 CS305"
+    llm_description: "Target course name or code."
+    form: llm
+  - name: completed
+    type: string
+    required: false
+    label:
+      en_US: "Completed courses"
+      zh_Hans: "已修课程"
+    human_description:
+      en_US: "Course codes separated by comma or Chinese comma"
+      zh_Hans: "课程代码，逗号/顿号分隔"
+    llm_description: "Completed course codes, comma separated."
+    form: llm
+  - name: plan_json
+    type: string
+    required: false
+    label:
+      en_US: "Study plan JSON (optional)"
+      zh_Hans: "培养方案 JSON（可选）"
+    human_description:
+      en_US: "Leave empty to use the bundled demo plan."
+      zh_Hans: "留空则使用内置示例方案。"
+    llm_description: "Study plan JSON. Omit to use the bundled demo plan."
+    form: llm
+extra:
+  python:
+    source: tools/prereq.py

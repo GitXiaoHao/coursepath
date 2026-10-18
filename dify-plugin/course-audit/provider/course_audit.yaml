@@ -1,0 +1,17 @@
+identity:
+  author: "coursepath"
+  name: "course_audit"
+  label:
+    en_US: "Course path audit"
+    zh_Hans: "课径核算"
+  description:
+    en_US: "Deterministic credit and prerequisite audit for university study plans."
+    zh_Hans: "把培养方案变成可核算的问答：学分缺口与先修链判定都由确定性代码给出，结论可逐条核对。"
+  icon: "icon.svg"
+
+tools:
+  - tools/audit.yaml
+  - tools/prereq.yaml
+extra:
+  python:
+    source: provider/course_audit.py

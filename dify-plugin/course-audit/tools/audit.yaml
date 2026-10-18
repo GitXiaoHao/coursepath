@@ -1,0 +1,37 @@
+identity:
+  name: "credit_audit"
+  author: "coursepath"
+  label:
+    en_US: "Credit gap audit"
+    zh_Hans: "学分缺口核算"
+description:
+  human:
+    en_US: "Compute remaining credits per module from a study plan and completed courses. Deterministic, with rule numbers (R1-R5) for every conclusion."
+    zh_Hans: "按培养方案分模块核算还差多少学分；结论带规则编号（R1–R5），可逐条核对。"
+  llm: "Given a study-plan JSON and a list of completed course codes, compute per-module credit gaps and remaining credits. Deterministic rules: only passed courses count, surplus in one module never offsets another, remaining = sum of module gaps."
+parameters:
+  - name: completed
+    type: string
+    required: true
+    label:
+      en_US: "Completed courses"
+      zh_Hans: "已修课程"
+    human_description:
+      en_US: "Course codes separated by comma, semicolon or Chinese comma, e.g. CS101,CS201 or CS101:3、CS201"
+      zh_Hans: "课程代码，逗号/分号/顿号分隔，例如 CS101,CS201 或 CS101:3、CS201"
+    llm_description: "Completed course codes, comma separated, optionally with credits (CODE:3)."
+    form: llm
+  - name: plan_json
+    type: string
+    required: false
+    label:
+      en_US: "Study plan JSON (optional)"
+      zh_Hans: "培养方案 JSON（可选）"
+    human_description:
+      en_US: "Leave empty to use the bundled demo plan. Structure: {plan_id, major, total_credits, modules[{module, required}], courses[{code, name, credits, module, prerequisites}]}"
+      zh_Hans: "留空则使用内置示例方案。结构：{plan_id, major, total_credits, modules[{module, required}], courses[{code, name, credits, module, prerequisites}]}"
+    llm_description: "Study plan JSON. Omit to use the bundled demo plan."
+    form: llm
+extra:
+  python:
+    source: tools/audit.py

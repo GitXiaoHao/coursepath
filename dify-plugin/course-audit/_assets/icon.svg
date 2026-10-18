@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none" role="img" aria-label="Course path audit">
+  <title>Course path audit</title>
+  <defs>
+    <linearGradient id="kbg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+  </defs>
+  <rect width="40" height="40" rx="9" fill="url(#kbg)"/>
+  <path d="M12 9.5h11.2L29 15.3V30a1.5 1.5 0 0 1-1.5 1.5H12A1.5 1.5 0 0 1 10.5 30V11A1.5 1.5 0 0 1 12 9.5Z" fill="#FFFFFF" fill-opacity="0.94"/>
+  <path d="M23 9.5 29 15.5h-4.8a1.2 1.2 0 0 1-1.2-1.2V9.5Z" fill="#CCFBF1"/>
+  <path d="M14 18.6h8.4M14 22.1h6.2" stroke="#0F766E" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="m19.4 26.6 1.9 2 3.4-3.6" stroke="#0F766E" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

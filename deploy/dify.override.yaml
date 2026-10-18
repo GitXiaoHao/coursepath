@@ -31,6 +31,17 @@ services:
       - default
       - ssrf_proxy_network
 
+  # Windows/WSL 下 plugin_daemon 的依赖安装会失败：
+  #   failed to rename file ... /.uv-cache/.tmpXXXX -> /.uv-cache/archive-v0/...
+  #   Permission denied (os error 13)
+  # 根因是 uv 的缓存目录落在 Windows 绑定挂载（9p/drvfs）上，不支持其原子重命名。
+  # 把 uv 缓存与 HOME 指向容器内本地盘即可，插件安装目录仍在卷里，可持久化。
+  plugin_daemon:
+    environment:
+      UV_CACHE_DIR: /tmp/uv-cache
+      HOME: /tmp
+      XDG_CACHE_HOME: /tmp/.cache
+
   # Dify 1.17.1 自带的 compose 给 local_sandbox 传了 `--require-auth-token`，
   # 但同版本镜像的 shellctl 不认识该参数，导致容器无限重启（日志：
   # `flag provided but not defined: -require-auth-token`）。

@@ -1,0 +1,31 @@
+version: 0.1.1
+type: plugin
+author: coursepath
+name: course_audit
+label:
+  en_US: Course path audit
+  zh_Hans: 课径核算
+description:
+  en_US: Turn a university study plan into auditable answers. Credit gaps and prerequisite chains are computed by deterministic code, not by a language model, so every conclusion can be checked line by line.
+  zh_Hans: 把培养方案变成可核算的问答。学分缺口与先修链由确定性代码计算而非语言模型生成，结论可逐条核对。
+icon: icon.svg
+icon_dark: icon-dark.svg
+resource:
+  memory: 268435456
+  permission: {}
+plugins:
+  tools:
+    - provider/course_audit.yaml
+meta:
+  version: 0.1.1
+  arch:
+    - amd64
+    - arm64
+  runner:
+    language: python
+    version: "3.12"
+    entrypoint: main
+  minimum_dify_version: 1.0.0
+created_at: 2026-10-18T13:31:49.7420714+08:00
+privacy: PRIVACY.md
+verified: false
