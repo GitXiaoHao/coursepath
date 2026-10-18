@@ -82,7 +82,8 @@
 cd campus-kb
 python -m venv .venv && .venv/Scripts/activate
 pip install -r requirements.txt
-pytest -q                     # 52 passed，无需网络、无需 Dify、无需 API Key
+pytest -q                     # 149 passed，无需网络、无需 Dify、无需 API Key
+python -m eval.run_eval       # 检索/核算/先修评测，带门禁，退出码 0 才算通过
 set KB_API_KEY=demo-key
 uvicorn app.main:app --port 8088
 
@@ -93,11 +94,21 @@ curl -s -X POST http://127.0.0.1:8088/retrieval \
   -d '{"knowledge_id":"campus-kb","query":"编译原理的先修要求","retrieval_setting":{"top_k":3,"score_threshold":0.0}}'
 ```
 
-详见 [campus-kb/README.md](campus-kb/README.md)。
+接入 Dify（需要本机已跑起 Dify 1.17.1）：
+
+```powershell
+.\deploy\bootstrap.ps1                      # 起 Dify + campus-kb（幂等）
+$env:DIFY_ADMIN_PASSWORD = "<管理员密码>"    # 下面三个脚本都要用，脚本内不再硬编码
+python deploy\spike_dify.py                 # 验证 外部知识库 → SSRF → campus-kb 链路
+python dify-workflow\build_chatflow.py --import   # 导入 Chatflow、发布并跑冒烟
+python deploy\install_plugin.py             # 安装 .difypkg 并验证工具调用
+```
+
+详见 [campus-kb/README.md](campus-kb/README.md) 与 [docs/05-系统集成说明.md](docs/05-系统集成说明.md)。
 
 ## 许可证
 
-计划以 **Apache-2.0** 发布自研代码（详见 `docs/01-参赛计划.md` §3.5 资源清单）。
+自研代码以 **Apache-2.0** 发布（根目录 `LICENSE`），文档与样例数据以 **CC-BY-4.0** 发布；清单见 `report/开源及第三方资源使用清单.md`。
 第三方组件许可见技术报告附录；**不得引入 AGPL 依赖**（已用 `pdfplumber`(MIT) 规避 PyMuPDF/Ghostscript）。
 
 ## 公平性
