@@ -44,19 +44,33 @@
 | 10/27–10/28 | 4 材料 | 技术报告 PDF + 3–5 分钟视频 |
 | 10/29–10/30 | 5 预检提交 | 全项 checklist 通过，10/30 12:00 前提交 |
 
+## 当前进度
+
+| 阶段 | 状态 |
+|---|---|
+| 0 赛题解构 | ✅ 完成（`docs/00-约束清单.md` + 仓库骨架） |
+| 1 路径决策 | ✅ 结论已定（C 为主 / A 为辅，见 `docs/01-参赛计划.md` §1）；⏳ 市场取证待补 |
+| 2 技术方案 | ✅ 文档完成；⏳ 环境 spike 待做（需 Docker / 云主机） |
+| 3 开发 | 🚧 已提前启动：`campus-kb` 外部知识库契约 + 混合检索完成，**52 项测试全绿** |
+
 ## 快速开始
 
-尚未进入开发阶段（10/21 起）。届时：
-
 ```bash
-# 服务
-cd campus-kb && pip install -r requirements.txt && pytest -q
+cd campus-kb
+python -m venv .venv && .venv/Scripts/activate
+pip install -r requirements.txt
+pytest -q                     # 52 passed，无需网络、无需 Dify、无需 API Key
+set KB_API_KEY=demo-key
 uvicorn app.main:app --port 8088
-# 独立验证外部知识库契约（不依赖 Dify）
+
+# 独立验证外部知识库契约（不依赖 Dify 界面）
+curl -s http://127.0.0.1:8088/health
 curl -s -X POST http://127.0.0.1:8088/retrieval \
-  -H "Authorization: Bearer $KB_API_KEY" -H "Content-Type: application/json" \
-  -d '{"knowledge_id":"k1","query":"先修要求","retrieval_setting":{"top_k":5,"score_threshold":0.3}}'
+  -H "Authorization: Bearer demo-key" -H "Content-Type: application/json" \
+  -d '{"knowledge_id":"campus-kb","query":"编译原理的先修要求","retrieval_setting":{"top_k":3,"score_threshold":0.0}}'
 ```
+
+详见 [campus-kb/README.md](campus-kb/README.md)。
 
 ## 许可证
 
