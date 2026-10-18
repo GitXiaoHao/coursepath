@@ -79,31 +79,76 @@
 
 ## 快速开始
 
-```bash
-cd campus-kb
-python -m venv .venv && .venv/Scripts/activate
-pip install -r requirements.txt
-pytest -q                     # 149 passed，无需网络、无需 Dify、无需 API Key
-python -m eval.run_eval       # 检索/核算/先修评测，带门禁，退出码 0 才算通过
-set KB_API_KEY=demo-key
-uvicorn app.main:app --port 8088
+分两条路，**只验证技术内核不需要 Docker**。命令默认 Windows PowerShell（macOS/Linux 把 `.venv\Scripts\python.exe` 换成 `.venv/bin/python` 即可）。
 
-# 独立验证外部知识库契约（不依赖 Dify 界面）
-curl -s http://127.0.0.1:8088/health
-curl -s -X POST http://127.0.0.1:8088/retrieval \
-  -H "Authorization: Bearer demo-key" -H "Content-Type: application/json" \
-  -d '{"knowledge_id":"campus-kb","query":"编译原理的先修要求","retrieval_setting":{"top_k":3,"score_threshold":0.0}}'
-```
-
-接入 Dify（需要本机已跑起 Dify 1.17.1）：
+### A. 只跑服务与测试（约 2 分钟，不需要 Docker / Dify）
 
 ```powershell
-.\deploy\bootstrap.ps1                      # 起 Dify + campus-kb（幂等）
-$env:DIFY_ADMIN_PASSWORD = "<管理员密码>"    # 下面三个脚本都要用，脚本内不再硬编码
-python deploy\spike_dify.py                 # 验证 外部知识库 → SSRF → campus-kb 链路
-python dify-workflow\build_chatflow.py --import   # 导入 Chatflow、发布并跑冒烟
-python deploy\install_plugin.py             # 安装 .difypkg 并验证工具调用
+cd <本仓库根目录>
+py -3.11 -m venv campus-kb\.venv                  # 3.11 或 3.12 均可
+$py = "$PWD\campus-kb\.venv\Scripts\python.exe"   # 后面都用它
+& $py -m pip install -r campus-kb\requirements.txt
+$env:PYTHONIOENCODING = "utf-8"; $env:PYTHONUTF8 = "1"   # 否则中文输出乱码
+
+Push-Location campus-kb
+& $py -m pytest -q                 # 149 passed（无网络、无 Dify、无 API Key）
+& $py -m eval.run_eval             # 评测带门禁：Recall@1<0.8 或 exact_match<1.0 即非零退出
+Pop-Location
 ```
+
+起服务并验契约（新开一个终端，先重复上面两行环境变量与 `$py`）：
+
+```powershell
+cd <本仓库根目录>\campus-kb
+$env:KB_API_KEY = "demo-key"
+& $py -m uvicorn app.main:app --port 8088
+
+# 另开终端，先重复 $py 与环境变量
+curl.exe -s http://127.0.0.1:8088/health
+& $py -c "import json,urllib.request as u; req=u.Request('http://127.0.0.1:8088/retrieval',data=json.dumps({'knowledge_id':'campus-kb','query':'编译原理的先修要求','retrieval_setting':{'top_k':3,'score_threshold':0.0}}).encode(),headers={'Authorization':'Bearer demo-key','Content-Type':'application/json'}); d=json.load(u.urlopen(req)); print(len(d['records']), d['records'][0]['metadata']['page'])"
+```
+
+> 故意的：PowerShell 5.1 会把原生 `curl.exe` 参数里的双引号吃掉，`-d '{...}'` 会变成非法 JSON；这里用 Python 发请求最稳（bash 下可直接用 `curl -d`）。
+
+### B. 全栈跑通（Dify 1.17.1 + 自研服务 + 插件）
+
+前置：Docker Desktop 已启动（脚本会自己把 Docker 加进 PATH）；能拉取 Docker Hub 镜像（拉取失败先看 `docs/04` 的镜像加速说明）。
+
+```powershell
+cd <本仓库根目录>
+.\deploy\bootstrap.ps1        # 幂等：起 Dify 全栈 + campus-kb，自动生成 .env 与随机 KB_API_KEY
+
+# 首次使用：浏览器打开 http://localhost 创建管理员
+#   邮箱建议填 admin@campus-kb.local（用别的邮箱就设 $env:DIFY_ADMIN_EMAIL）
+$env:DIFY_ADMIN_EMAIL    = "admin@campus-kb.local"
+$env:DIFY_ADMIN_PASSWORD = "<刚才设置的密码>"
+
+& $py -m pip install -r requirements-tools.txt    # 下面三个脚本需要 pyyaml / httpx
+& $py deploy\spike_dify.py                        # ① 外部知识库 → SSRF → campus-kb 链路
+& $py dify-workflow\build_chatflow.py --import    # ② 导入 Chatflow、发布、跑冒烟问答
+& $py deploy\install_plugin.py                    # ③ 安装 .difypkg 并验证工具调用
+```
+
+跑完在 Dify 的 **WEB APPS** 里就有「课径 · 可核算的培养方案问答」，直接提问即可。
+健康检查：`http://localhost/`（Dify）、`http://127.0.0.1:8088/health`（自研服务）。
+
+> 三个脚本都会打印断言结果并以退出码表示成败；重跑 `build_chatflow.py --import` 会先删同名应用再导入（每次生成新 app_id 与 API Key）。
+> 常见坑见 `docs/04-环境spike记录.md` 与 `docs/05-系统集成说明.md`：Docker CLI 不在 PATH、镜像 `magic number mismatch` 重试即可、`local_sandbox` 的 `--require-auth-token`、外部知识库 `retrieval_model` 为 NULL 导致检索静默返回 0 条、控制台接口连 GET 也要 `X-CSRF-Token`。
+
+### C. 重新生成材料（可选，需要本机 Edge）
+
+```powershell
+& $py report\build_pdf.py                 # 技术报告 PDF（13 页）
+& $py report\build_annex.py               # 资源清单附件 PDF（6 页）
+& $py video\make_slides.py                # 幻灯片 PNG
+& $py video\record_demo.py                # 录制真实界面（Playwright 驱动本机 Edge）
+& $py video\build_video.py                # 合成旁白与成片
+& $py deploy\make_submission.py           # 收拢到 提交材料/ 并做规格校验
+```
+
+> `record_demo.py` / `make_figures.py` 复用系统 Edge（`channel="msedge"`），不需要 `playwright install` 下载浏览器；密码与邮箱从 `DIFY_ADMIN_PASSWORD` / `DIFY_ADMIN_EMAIL` 读取。
+
+> 常见坑都记在 `docs/04-环境spike记录.md` 与 `docs/05-系统集成说明.md`：Docker CLI 不在 PATH、镜像拉取 `magic number mismatch` 重试即可、`local_sandbox` 的 `--require-auth-token`、外部知识库 `retrieval_model` 为 NULL 导致检索静默返回 0 条、控制台接口连 GET 也要 `X-CSRF-Token`。
 
 详见 [campus-kb/README.md](campus-kb/README.md) 与 [docs/05-系统集成说明.md](docs/05-系统集成说明.md)。
 

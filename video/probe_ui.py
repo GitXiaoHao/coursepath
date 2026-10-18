@@ -22,7 +22,7 @@ def _require_password() -> str:
     return PASSWORD
 
 
-EMAIL = "admin@campus-kb.local"
+EMAIL = os.environ.get("DIFY_ADMIN_EMAIL", "admin@campus-kb.local")
 PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 OUT = Path(__file__).resolve().parent / ".build"
 APP_NAME = "课径 · 可核算的培养方案问答"

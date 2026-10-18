@@ -1,0 +1,19 @@
+# 集成与材料脚本的依赖（服务本体不需要）
+#
+# 只在两种情况下才装：
+#   1) 想让 Dify 全栈跑通（README「B. 全栈」）：spike_dify / build_chatflow / install_plugin
+#   2) 想重新生成报告与视频（README「C. 重新生成材料」）
+#
+# 用法：
+#   & $py -m pip install -r requirements-tools.txt
+
+pyyaml>=6.0          # dify-workflow/build_chatflow.py 序列化 DSL
+httpx>=0.27          # deploy/install_plugin.py 调控制台接口
+
+# —— 以下仅在重新生成材料时需要 ——
+markdown>=3.5        # report/build_pdf.py、report/build_annex.py
+pypdf>=4.0           # 读取页数做预检
+pypdfium2>=4.0       # 版面目检（渲染成 PNG）
+Pillow>=10.0         # video/make_slides.py、插图裁剪
+playwright>=1.40     # video/record_demo.py、report/make_figures.py（复用系统 Edge，无需下载浏览器）
+imageio-ffmpeg>=0.4  # video/build_video.py 合成视频（自带 ffmpeg 二进制）

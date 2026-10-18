@@ -33,7 +33,7 @@ def _require_password() -> str:
     return PASSWORD
 
 
-EMAIL = "admin@campus-kb.local"
+EMAIL = os.environ.get("DIFY_ADMIN_EMAIL", "admin@campus-kb.local")
 PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 PKG = Path(__file__).resolve().parent.parent / "dify-plugin" / "dist" / "course_audit-0.1.0.difypkg"
 PLUGIN_NAME = "course-audit"
