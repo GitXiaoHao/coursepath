@@ -26,7 +26,8 @@
 │  ├─ 04-环境spike记录.md     环境搭建实测记录
 │  ├─ 05-系统集成说明.md      Dify 应用层落地方式与集成踩坑
 │  ├─ 06-提交预检清单.md      26 项提交前检查（含判定方法与证据）
-│  └─ 07-插件开发与验证.md    插件设计取舍、打包、安装与四个坑
+│  ├─ 07-插件开发与验证.md    插件设计取舍、打包、安装与四个坑
+│  └─ 08-插件使用指南.md      把 .difypkg 交给第三方后：怎么装、怎么用、怎么换成自己的方案
 ├─ campus-kb/                自研外部服务（FastAPI，本项目实质技术贡献）
 │  ├─ app/api/               /retrieval /audit /prereq /health
 │  ├─ core/                  parser / schema / graph / index / scoring / intent
@@ -149,6 +150,18 @@ $env:DIFY_ADMIN_PASSWORD = "<刚才设置的密码>"
 > `record_demo.py` / `make_figures.py` 复用系统 Edge（`channel="msedge"`），不需要 `playwright install` 下载浏览器；密码与邮箱从 `DIFY_ADMIN_PASSWORD` / `DIFY_ADMIN_EMAIL` 读取。
 
 > 常见坑都记在 `docs/04-环境spike记录.md` 与 `docs/05-系统集成说明.md`：Docker CLI 不在 PATH、镜像拉取 `magic number mismatch` 重试即可、`local_sandbox` 的 `--require-auth-token`、外部知识库 `retrieval_model` 为 NULL 导致检索静默返回 0 条、控制台接口连 GET 也要 `X-CSRF-Token`。
+
+### D. 只把插件分发给别人（不跑本项目的服务）
+
+把 `dify-plugin/dist/course_audit-0.1.1.difypkg`（24.6 KB，自带核算内核、无网络调用）发给对方，对方：
+
+1. Dify 左侧 **集成** → 左上 **安装** → 下拉选 **本地集成包** → 选 `.difypkg`；
+2. 集成 → **工具** 里出现「课径核算」即装好；
+3. 工作室新建 Chatflow → 加 **工具** 节点 → 选 `credit_audit` / `prereq_check` → 参数 `completed=CS101,CS201`（`plan_json` 留空用内置示例方案）。
+
+自建包没有官方签名，若报签名校验失败，需在**部署侧** `.env` 设 `FORCE_VERIFYING_SIGNATURE=false` 并重启 `api worker plugin_daemon`（不改源码）。
+
+完整步骤、期望输出、`plan_json` 写法与 5 条常见问题：[docs/08-插件使用指南.md](docs/08-插件使用指南.md)。
 
 详见 [campus-kb/README.md](campus-kb/README.md) 与 [docs/05-系统集成说明.md](docs/05-系统集成说明.md)。
 

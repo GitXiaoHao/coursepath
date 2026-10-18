@@ -17,6 +17,8 @@ deploy/dify/
 deploy/**/.env
 .tools/
 *.difypkg
+# 例外：插件交付物本身要能被第三方直接下载（24 KB，非构建缓存）
+!dify-plugin/dist/course_audit-0.1.1.difypkg
 *.faiss
 *.zip
 

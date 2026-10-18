@@ -188,7 +188,9 @@ def main() -> int:
         "公开代码仓库（Apache-2.0）：\n"
         f"{REPO_URL}\n\n"
         "其中可直接复用的插件包：\n"
-        f"dify-plugin/dist/{PLUGIN.name}（安装后在工作流中调用 credit_audit / prereq_check）\n",
+        f"dify-plugin/dist/{PLUGIN.name}（安装后在工作流中调用 credit_audit / prereq_check）\n\n"
+        "插件使用说明（安装步骤、期望输出、自定义培养方案写法）：\n"
+        f"{REPO_URL}/blob/main/docs/08-插件使用指南.md\n",
         encoding="utf-8", newline="\n",
     )
 
