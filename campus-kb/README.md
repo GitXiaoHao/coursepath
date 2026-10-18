@@ -47,21 +47,32 @@ curl -s -X POST http://127.0.0.1:8088/retrieval \
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | POST | `/retrieval` | Dify 外部知识库契约（Dify 会在登记的 endpoint 后自动追加该路径） |
+| POST | `/audit` | 学分缺口的确定性核算：输入已修课程，输出缺什么、差多少、依据哪一行 |
+| POST | `/prereq` | 先修判定：输入目标课程 + 已修课程，输出是否满足、缺哪门 |
 | GET | `/health` | 索引规模、向量后端、融合策略 |
 | GET | `/openapi.json` | 自动生成，报告"可独立验证"的证据 |
 
 响应固定为 `{"records":[{"content","score","title","metadata"}]}`，**`metadata` 永远是对象**（`null` 会让 Dify 检索管线报错）；无结果返回 `{"records": []}` 而非 404。
 
+`/audit`、`/prereq` 的结论**不由模型生成**：同一输入永远得到同一输出，且每条结论都带
+`source`（文档 / 页码 / 表格行 / 原文片段），回答"凭什么这么算"。
+
 ## 目录
 
 ```
 core/schema.py       课程/学分/先修表达式/来源引用 领域模型
+core/parser.py       Markdown 表格 → 结构化课程/模块/先修（真实 PDF 走同一接口）
+core/graph.py        先修表达式求值（and/or/credits/传递依赖/循环检测）
+core/scoring.py      学分缺口核算（模块下限、核心超额填补、去重）
+core/intent.py       查询意图 → 表型加权（可枚举规则，无模型）
 core/filters.py      metadata_condition 算子实现（and/or + 16 个算子）
-core/index.py        BM25 + 稠密 + 融合 + 过滤 + 证据门槛
+core/index.py        BM25 + 稠密 + 融合 + 过滤 + 证据门槛 + 意图加权
 core/embeddings.py   向量后端（NullEmbedder 离线可用 / OpenAI 兼容）
 core/corpus.py       JSONL 语料装载与元数据扁平化
 app/api/retrieval.py 契约端点与错误体
+app/api/course.py    /audit、/prereq
 app/main.py          应用工厂、/health、统一错误处理
+eval/                金标用例 + 可复现评测脚本（`python -m eval.run_eval`）
 ```
 
 ## 实现要点（评审可核对）
@@ -71,10 +82,19 @@ app/main.py          应用工厂、/health、统一错误处理
    `score_threshold=0.0` 会让无关分块全量通过、污染答案。
 3. **过滤先行**：`metadata_condition` 在打分前裁剪候选集，不满足条件的分块没有打分资格。
 4. **默认宽松的 knowledge_id 校验**：配置笔误由服务端兜底，不让 Dify 用户看到 500。
+5. **意图加权只改排序不改召回**：1.15× 作用在已通过证据门槛的候选上，问题涉及
+   "学分/学期/先修/模块"时对应表型优先，避免同名课程在两张表间误排。
+6. **核算不复用模型的算术**：学分与先修结论由 `core/scoring.py`、`core/graph.py`
+   计算，模型只负责把结果讲成人话，杜绝"看起来对但算错"。
+
+## 评测
+
+`docs/03-评测结果.md` 记录当前数字：检索 Recall@1 0.833 → 1.000（基线 → 意图加权）、
+学分核算 7/7、先修判定 10/10，一条命令可复现。
 
 ## 待办（后续阶段）
 
-- [ ] `core/parser.py`：pdfplumber 表格解析 + 条款切分（10/21）
-- [ ] `core/graph.py` / `core/scoring.py`：先修链与学分缺口核算、`/audit`、`/prereq`（10/23）
-- [ ] `eval/`：60 题检索集、30 个核算案例、与 Dify 内置知识库的对比实验（10/22–10/25）
+- [ ] `core/parser.py` 的 PDF 通道：接 pdfplumber 解析真实培养方案（10/21）
+- [x] `core/graph.py` / `core/scoring.py`：先修链与学分缺口核算、`/audit`、`/prereq`
+- [ ] 扩到 60 题检索集 + 与 Dify 内置知识库的对比实验（10/22–10/25）
 - [ ] `Dockerfile` + compose（10/24）
