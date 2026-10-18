@@ -111,3 +111,56 @@ def test_health_reports_plan(client: TestClient) -> None:
     body = client.get("/health").json()
     assert body["plan"]["plan_id"] == "plan-demo-2026"
     assert body["plan"]["courses"] > 0
+
+
+# --- 对话友好输入：用户在对话框直接粘课程串（工作流无法自己切分） ---
+
+
+def test_audit_accepts_completed_text(client: TestClient) -> None:
+    data = client.post("/audit", json={"completed_text": "CS101, CS201"}, headers=AUTH).json()
+    rows = {row["module"]: row for row in data["modules"]}
+    # 没报学分时按培养方案补全（R3），否则会被当成 0 学分
+    assert rows["专业核心课"]["earned"] == 8
+    assert data["warnings"] == []
+
+
+def test_audit_completed_text_accepts_cjk_separators(client: TestClient) -> None:
+    data = client.post("/audit", json={"completed_text": "CS101、CS201；CS310"}, headers=AUTH).json()
+    rows = {row["module"]: row for row in data["modules"]}
+    assert rows["专业核心课"]["earned"] == 11
+
+
+def test_audit_completed_text_reports_credit_mismatch(client: TestClient) -> None:
+    data = client.post("/audit", json={"completed_text": "CS101:3"}, headers=AUTH).json()
+    rows = {row["module"]: row for row in data["modules"]}
+    # R3：学分以培养方案登记的值为准（CS101 方案登记 4），学生上报 3 只触发告警
+    assert rows["专业核心课"]["earned"] == 4
+    assert any("不一致" in warning for warning in data["warnings"])
+
+
+def test_audit_dedupes_across_both_inputs(client: TestClient) -> None:
+    body = {"completed": [{"code": "cs101", "credits": 4}], "completed_text": "CS101"}
+    data = client.post("/audit", json=body, headers=AUTH).json()
+    rows = {row["module"]: row for row in data["modules"]}
+    assert rows["专业核心课"]["earned"] == 4, "同一课程重复提交不应重复计分"
+
+
+def test_audit_text_input_rejects_unknown_codes_gracefully(client: TestClient) -> None:
+    data = client.post("/audit", json={"completed_text": "CS101, ???"}, headers=AUTH).json()
+    assert data["remaining_credits"] < 160, "能识别的课程仍应计入"
+
+
+def test_prereq_accepts_completed_text(client: TestClient) -> None:
+    body = {"course_code": "CS305", "completed_text": "CS101 CS201 CS202"}
+    data = client.post("/prereq", json=body, headers=AUTH).json()
+    assert data["ok"] is True
+
+
+def test_summaries_are_present_and_actionable(client: TestClient) -> None:
+    audit = client.post("/audit", json={"completed_text": "CS101"}, headers=AUTH).json()
+    assert audit["summary"].startswith("### 学分核算")
+    assert "还差" in audit["summary"]
+
+    prereq = client.post("/prereq", json={"course_code": "CS305"}, headers=AUTH).json()
+    assert prereq["summary"].startswith("### 先修检查")
+    assert "不满足" in prereq["summary"]

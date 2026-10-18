@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -132,6 +133,28 @@ class CreditPlan(BaseModel):
         partial = [course for course in self.courses if name and name in course.name]
         return partial[0] if len(partial) == 1 else None
 
+    def resolve_in_text(self, text: str) -> Course | None:
+        """从一句自然语言里找出被问到的课程（对话输入专用）。
+
+        为什么需要它：Chatflow 里用户问的是"编译原理的先修要求是什么？我修过
+        CS101"，把这整句传给 ``resolve`` 永远匹配不上。这里先按**最长课程名**
+        命中（"编译原理实验" 与 "编译原理" 同时出现时取更长的那个），再退回
+        按课程代码找。
+
+        顺序很关键：问句里出现的代码经常是"我已修过"的课，名字才是被问的那门。
+        若先认代码，"编译原理的先修要求？我修过 CS101" 会被答成 CS101。
+        """
+        if not text:
+            return None
+        hits = [course for course in self.courses if course.name and course.name in text]
+        if hits:
+            return max(hits, key=lambda course: len(course.name))
+        courses = self.course_map()
+        codes = [code for code in _CODE_IN_TEXT.findall(text.upper()) if code in courses]
+        if codes:
+            return courses[max(codes, key=len)]
+        return None
+
     def to_dict(self) -> dict:
         """导出为 ``data/samples/plan.json`` 同构的结构（省略空字段）。"""
 
@@ -161,6 +184,43 @@ class CompletedCourse(BaseModel):
     credits: float = Field(ge=0)
     grade: float | None = None
     passed: bool = True
+
+
+#: 已修课程文本里允许出现的分隔符：中英文逗号、顿号、分号、竖线、空白
+_COMPLETED_SEPARATORS = re.compile(r"[,，、;；|\s]+")
+#: 自由文本里识别课程代码：2–6 个字母 + 3–4 位数字，前后不能紧邻字母数字
+_CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,6}\d{3,4})(?![A-Za-z0-9])")
+#: 单个记号：课程代码（可含字母数字连字符），可选 `:学分` / `(学分)`
+_COMPLETED_TOKEN = re.compile(r"^(?P<code>[A-Za-z0-9][A-Za-z0-9_\-\.]*)(?::|\(|（)?(?P<credits>\d+(?:\.\d+)?)?\)?$")
+
+
+def parse_completed_text(text: str | None) -> tuple[list[CompletedCourse], list[str]]:
+    """把用户在对话框里直接粘的课程串解析成结构化已修课程。
+
+    为什么放在这里：工作流没有"把逗号串切成对象数组"的能力（代码节点无外网、
+    Jinja 模板过滤器有限），所以把这一步做进服务端，DSL 只需原样转发文本。
+
+    支持 ``MA101,CS201``、``MA101:3、CS201:4``、``MA101(3)`` 等写法；
+    学分缺省为 0，由调用方按培养方案补齐。返回 ``(课程列表, 告警列表)``，
+    无法识别的记号进告警而不是抛错——对话场景下拒答比崩溃更友好。
+    """
+    courses: list[CompletedCourse] = []
+    warnings: list[str] = []
+    seen: set[str] = set()
+    for token in _COMPLETED_SEPARATORS.split(text or ""):
+        if not token:
+            continue
+        match = _COMPLETED_TOKEN.match(token.strip())
+        if not match:
+            warnings.append(f"无法识别的课程记号：{token}")
+            continue
+        code = match.group("code").upper()
+        if code in seen:
+            continue
+        seen.add(code)
+        credits_text = match.group("credits")
+        courses.append(CompletedCourse(code=code, credits=float(credits_text) if credits_text else 0.0))
+    return courses, warnings
 
 
 class Chunk(BaseModel):

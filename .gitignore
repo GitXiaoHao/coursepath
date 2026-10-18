@@ -1,40 +1,26 @@
-# ---- 敏感数据（真实培养方案/大纲仅本地演示，绝不入库）----
-data/real/
-*.real.pdf
-*.real.docx
-.env
-.env.*
-!.env.example
-*.key
-*.pem
-secrets/
-
-# ---- 构建与运行产物 ----
+# Python
+*.pyc
 __pycache__/
-*.py[cod]
-*.egg-info/
 .venv/
+.venv*/
 venv/
 .pytest_cache/
 .mypy_cache/
-.ruff_cache/
-dist/
-build/
+
+# 数据：真实培养方案/大纲不入库（版权与隐私）
+**/data/real/
+**/data/index/
+
+# 密钥与部署产物
+.env
+deploy/dify/
+deploy/**/.env
+.tools/
 *.difypkg
-
-# ---- 索引与向量文件（体积大，可重新生成）----
 *.faiss
-*.index
-*.sqlite3
-*.db
-campus-kb/data/index/
+*.zip
 
-# ---- 原始探索记录 ----
+# 本地探索记录与临时文件
 .explore/
-
-# ---- 工具/系统 ----
-.idea/
-.vscode/
-.DS_Store
-Thumbs.db
+tmp/
 *.log

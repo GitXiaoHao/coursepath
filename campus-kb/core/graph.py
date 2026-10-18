@@ -151,7 +151,38 @@ class PrereqReport:
             "chain": self.chain,
             "cycle": self.cycle,
             "notes": self.notes,
+            "summary": self.summary(),
         }
+
+    def summary(self) -> str:
+        """面向对话的可读摘要（Markdown），与 ``AuditResult.summary`` 同构。"""
+        name = self.target.get("course_name") or ""
+        code = self.target.get("course_code") or ""
+        title = f"{name}（{code}）" if name and code else (name or code or "目标课程")
+        lines = [f"### 先修检查 · {title}"]
+        if self.ok:
+            lines.append("- 结论：**先修要求已满足**，可以选课")
+        elif self.direct:
+            lines.append(f"- 结论：**不满足**，缺 {len(self.direct)} 门直接先修")
+        else:
+            lines.append(f"- 结论：**不满足**，缺 {len(self.indirect)} 门间接先修")
+        if self.direct:
+            lines.append("- 直接先修（必须先通过）：")
+            lines.extend(
+                f"  - {b.get('course_name', '')}（{b.get('course_code')}）：{b.get('reason', '')}"
+                for b in self.direct
+            )
+        if self.indirect:
+            lines.append("- 间接先修（更上游，需依次补齐）：")
+            for blocker in self.indirect[:8]:
+                path = " -> ".join(blocker.get("path") or [])
+                lines.append(f"  - {blocker.get('course_code')}（更上游）：{path}")
+        if self.notes:
+            lines.extend(f"- {note}" for note in self.notes[:5])
+        if self.cycle:
+            lines.append("- ⚠️ 数据存在循环先修，判定已终止：" + "；".join(self.cycle[:3]))
+        lines.append("- 判定依据：先修关系来自培养方案/教学大纲登记，逐条可回溯，非模型生成")
+        return "\n".join(lines)
 
 
 def _walk_indirect(
@@ -197,8 +228,8 @@ def _walk_indirect(
 def check_prerequisites(
     plan: CreditPlan, identifier: str, context: EvalContext
 ) -> PrereqReport:
-    """检查某门课的先修链是否满足。identifier 可为课程代码或名称。"""
-    course = plan.resolve(identifier)
+    """检查某门课的先修链是否满足。identifier 可为课程代码、名称或一整句提问。"""
+    course = plan.resolve(identifier) or plan.resolve_in_text(identifier)
     if course is None:
         return PrereqReport(
             ok=False,

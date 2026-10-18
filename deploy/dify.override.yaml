@@ -1,0 +1,39 @@
+# Dify 部署叠加配置（不修改 Dify 源码，仅在其 docker 目录旁提供覆盖文件）。
+#
+# 用法：由 deploy/bootstrap.ps1 复制到 deploy/dify/docker/docker-compose.override.yaml，
+# Docker Compose 会自动与官方 docker-compose.yaml 合并，官方文件保持原样。
+#
+# 作用：把自研的 campus-kb 接入 Dify 的 ssrf_proxy_network，使
+#   - Dify 的外部知识库可访问 http://campus-kb:8080/retrieval
+#   - 工作流 HTTP 节点可访问 http://campus-kb:8080/audit、/prereq
+# 同时 ssh 型内网访问需在 .env 设置 SSRF_PROXY_ALLOW_PRIVATE_DOMAINS=campus-kb
+# （ssrf_proxy 官方 entrypoint 支持该变量，会生成放行规则）。
+
+services:
+  campus-kb:
+    build:
+      context: ../../../campus-kb
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      KB_API_KEY: ${CAMPUS_KB_API_KEY:-dev-key}
+      KB_KNOWLEDGE_ID: ${CAMPUS_KB_KNOWLEDGE_ID:-campus-kb}
+      KB_CORPUS: ${CAMPUS_KB_CORPUS:-/app/data/samples/chunks.jsonl}
+      KB_PLAN: ${CAMPUS_KB_PLAN:-/app/data/samples/plan.json}
+      KB_VERSION: ${CAMPUS_KB_VERSION:-0.1.0}
+    # 仅本机可访问的调试端口；容器间走 campus-kb:8080
+    ports:
+      - "127.0.0.1:${CAMPUS_KB_PORT:-8088}:8080"
+    volumes:
+      # 语料可外挂覆盖，镜像内自带合成样例，保证开箱可跑
+      - ../../../campus-kb/data/samples:/app/data/samples:ro
+    networks:
+      - default
+      - ssrf_proxy_network
+
+  # Dify 1.17.1 自带的 compose 给 local_sandbox 传了 `--require-auth-token`，
+  # 但同版本镜像的 shellctl 不认识该参数，导致容器无限重启（日志：
+  # `flag provided but not defined: -require-auth-token`）。
+  # 本项目不使用 Agent 沙箱，去掉该参数即可；容器仍处在 internal 网络内。
+  local_sandbox:
+    command: ["shellctl", "serve", "--listen", "0.0.0.0:5004"]

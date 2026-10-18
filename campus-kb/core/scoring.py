@@ -48,7 +48,45 @@ class AuditResult:
             "warnings": self.warnings,
             "explain": self.explain,
             "earned_by_module": self.earned_by_module,
+            "summary": self.summary(),
         }
+
+    def summary(self) -> str:
+        """面向对话的可读摘要（Markdown）。
+
+        存在的理由：工作流的 Answer 节点只做字符串拼接，不该在 DSL 里堆一长串
+        三元表达式；把"怎么表述"收敛到服务端，DSL 保持 `{{#node.body.summary#}}`，
+        也让摘要本身可被 pytest 断言。
+        """
+        lines = [
+            f"### 学分核算 · {self.major}（培养方案 {self.version}）",
+            f"- 总学分 {self.total_credits:g}，已认定 {self.earned_credits:g}，"
+            f"**还差 {self.remaining_credits:g} 学分**",
+        ]
+        if self.gaps:
+            lines.append("- 模块缺口：")
+            earned = self.earned_by_module
+            for row in self.gaps:
+                module_earned = earned.get(row["module"], 0.0)
+                lines.append(
+                    f"  - {row['module']}：已修 {module_earned:g}/{row['need']:g}，缺 {row['missing']:g}"
+                )
+        else:
+            lines.append("- 各模块要求均已满足")
+        surplus = [row for row in self.modules if row["surplus"] > 0 and row["required"] > 0]
+        if surplus:
+            lines.append(
+                "- 超额部分不冲抵其他模块："
+                + "、".join(f"{row['module']} +{row['surplus']:g}" for row in surplus)
+            )
+        if self.unrecognized:
+            codes = "、".join(item["code"] for item in self.unrecognized[:8])
+            more = "等" if len(self.unrecognized) > 8 else ""
+            lines.append(f"- 未在培养方案登记的课程（不计学分）：{codes}{more}")
+        if self.warnings:
+            lines.extend(f"- ⚠️ {w}" for w in self.warnings[:5])
+        lines.append("- 依据规则：R1 只计已通过课程；R4 超额不冲抵；R5 剩余=各模块缺口之和")
+        return "\n".join(lines)
 
 
 def audit_credits(plan: CreditPlan, completed: list[CompletedCourse]) -> AuditResult:
