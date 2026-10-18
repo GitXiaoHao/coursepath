@@ -13,6 +13,7 @@
 """
 
 from __future__ import annotations
+import os
 
 import argparse
 import base64
@@ -24,8 +25,16 @@ from pathlib import Path
 import httpx
 
 BASE = "http://localhost"
+def _require_password() -> str:
+    if not PASSWORD:
+        raise SystemExit(
+            "请先设置环境变量 DIFY_ADMIN_PASSWORD（本机 Dify 管理员密码），"
+            "例如：$env:DIFY_ADMIN_PASSWORD = '<你的密码>'")
+    return PASSWORD
+
+
 EMAIL = "admin@campus-kb.local"
-PASSWORD = "CampusKb2026!"
+PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 PKG = Path(__file__).resolve().parent.parent / "dify-plugin" / "dist" / "course_audit-0.1.0.difypkg"
 PLUGIN_NAME = "course-audit"
 
@@ -55,7 +64,7 @@ class Console:
             "/console/api/login",
             json={
                 "email": EMAIL,
-                "password": base64.b64encode(PASSWORD.encode()).decode(),
+                "password": base64.b64encode(_require_password().encode()).decode(),
                 "remember_me": True,
             },
         )

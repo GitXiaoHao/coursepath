@@ -5,16 +5,26 @@ r"""抓取报告插图：对「回答卡片」做元素截图（自动滚动、�
 """
 
 from __future__ import annotations
+import os
 
 import sys
 import time
 from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 BASE = "http://localhost"
+def _require_password() -> str:
+    if not PASSWORD:
+        raise SystemExit(
+            "请先设置环境变量 DIFY_ADMIN_PASSWORD（本机 Dify 管理员密码），"
+            "例如：$env:DIFY_ADMIN_PASSWORD = '<你的密码>'")
+    return PASSWORD
+
+
 EMAIL = "admin@campus-kb.local"
-PASSWORD = "CampusKb2026!"
+PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 APP_NAME = "课径 · 可核算的培养方案问答"
 OUT = Path(__file__).resolve().parent / "img"
 
@@ -22,7 +32,7 @@ OUT = Path(__file__).resolve().parent / "img"
 def login(page: Page) -> None:
     page.goto(f"{BASE}/signin", wait_until="networkidle", timeout=60_000)
     page.fill('input[name="email"], input[type="email"]', EMAIL)
-    page.fill('input[name="password"], input[type="password"]', PASSWORD)
+    page.fill('input[name="password"], input[type="password"]', _require_password())
     page.click('button[type="submit"]')
     page.wait_for_url(lambda u: "/signin" not in u, timeout=60_000)
     page.wait_for_load_state("networkidle")
@@ -65,6 +75,55 @@ def shot_answer(page: Page, path: Path) -> None:
     print(f"  {path.name} {el.bounding_box()}")
 
 
+def resolve_app_id() -> str | None:
+    """用控制台 API 直接查应用 id，避免依赖应用列表页的渲染（列表偶尔加载慢会点不到）。"""
+    import base64
+    import http.cookiejar
+    import json
+    import urllib.request
+
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+    def csrf() -> str | None:
+        for cookie in jar:
+            if cookie.name == "csrf_token":
+                return cookie.value
+        return None
+
+    def call(method: str, path: str, payload: dict | None = None) -> dict:
+        data = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(BASE + path, data=data, method=method)
+        req.add_header("Content-Type", "application/json")
+        req.add_header("X-Version", "1.17.1")
+        token = csrf()
+        if token:
+            req.add_header("X-CSRF-Token", token)   # Dify 控制台接口（含 GET）都校验 CSRF
+        with opener.open(req, timeout=30) as resp:
+            return json.loads(resp.read() or b"{}")
+
+    call("POST", "/console/api/login", {
+        "email": EMAIL,
+        "password": base64.b64encode(_require_password().encode()).decode(),
+        "remember_me": True,
+    })
+    data = call("GET", "/console/api/apps?page=1&limit=50")
+    for app in data.get("data", []):
+        if app.get("name") == APP_NAME:
+            return app.get("id")
+    return None
+
+
+def open_app(page: Page) -> None:
+    """从左栏 WEB APPS 进入应用；列表页偶尔渲染慢，故用显式等待而非点击后立即继续。"""
+    page.goto(f"{BASE}/apps", wait_until="domcontentloaded")
+    entry = page.get_by_text(APP_NAME, exact=False).first
+    entry.wait_for(state="visible", timeout=60_000)
+    entry.click()
+    page.wait_for_load_state("networkidle")
+    time.sleep(2.5)
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
@@ -73,16 +132,18 @@ def main() -> int:
                                   locale="zh-CN", device_scale_factor=2)
         page = ctx.new_page()
         login(page)
-        page.goto(f"{BASE}/apps", wait_until="networkidle")
-        page.get_by_text(APP_NAME, exact=False).first.click()
-        page.wait_for_load_state("networkidle")
-        time.sleep(2.0)
+        open_app(page)
 
+        # 新对话设置表单只在「首次进入该应用」时出现；已有会话时直接进聊天，需容错
         box = page.locator('input[placeholder*="已修课程代码"]:visible').first
-        box.click()
-        box.fill("CS101,CS201")
-        page.locator('button:has-text("开始对话")').first.click()
-        page.wait_for_load_state("networkidle")
+        try:
+            box.wait_for(state="visible", timeout=8000)
+            box.click()
+            box.fill("CS101,CS201")
+            page.locator('button:has-text("开始对话")').first.click()
+            page.wait_for_load_state("networkidle")
+        except PlaywrightTimeoutError:
+            print("  （未出现新对话设置表单，直接在当前会话提问）")
         time.sleep(2.0)
 
         ask(page, "毕业还差多少学分？我已修 CS101 和 CS201")

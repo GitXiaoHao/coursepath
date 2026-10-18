@@ -14,6 +14,7 @@ r"""录制 Dify 真实界面演示（webm + 时间轴标记），供 build_video
 """
 
 from __future__ import annotations
+import os
 
 import json
 import shutil
@@ -24,8 +25,16 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost"
+def _require_password() -> str:
+    if not PASSWORD:
+        raise SystemExit(
+            "请先设置环境变量 DIFY_ADMIN_PASSWORD（本机 Dify 管理员密码），"
+            "例如：$env:DIFY_ADMIN_PASSWORD = '<你的密码>'")
+    return PASSWORD
+
+
 EMAIL = "admin@campus-kb.local"
-PASSWORD = "CampusKb2026!"
+PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 APP_NAME = "课径 · 可核算的培养方案问答"
 OUT = Path(__file__).resolve().parent / ".build"
 RAW = OUT / "raw-ui.webm"
@@ -85,7 +94,7 @@ def main() -> int:
         page.goto(f"{BASE}/signin", wait_until="networkidle", timeout=60_000)
         time.sleep(1.2)
         page.fill('input[name="email"], input[type="email"]', EMAIL)
-        page.fill('input[name="password"], input[type="password"]', PASSWORD)
+        page.fill('input[name="password"], input[type="password"]', _require_password())
         rec.mark("login-submit")
         page.click('button[type="submit"]')
         page.wait_for_url(lambda u: "/signin" not in u, timeout=60_000)

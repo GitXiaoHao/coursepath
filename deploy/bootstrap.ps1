@@ -26,6 +26,19 @@ $dockerDir = Join-Path $difyRoot 'docker'
 $envFile = Join-Path $dockerDir '.env'
 $composeUrl = 'https://github.com/langgenius/dify.git'
 
+# 原生程序把进度写到 stderr 属正常；$ErrorActionPreference='Stop' 会把它当致命错误，故统一走本函数
+function Invoke-Native {
+    param([Parameter(Mandatory)][string]$Exe, [Parameter(ValueFromRemainingArguments)][string[]]$Args)
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Exe @Args
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+    if ($code -ne 0) { throw "命令失败（exit=$code）：$Exe $($Args -join ' ')" }
+}
 function Add-DockerToPath {
     $bin = 'C:\Program Files\Docker\Docker\resources\bin'
     if ((Test-Path $bin) -and ($env:PATH -notlike "*$bin*")) {
@@ -68,7 +81,7 @@ function New-Secret {
 
 Write-Host '[1/5] 检查 Docker...' -ForegroundColor Cyan
 Add-DockerToPath
-$ver = (& docker version --format '{{.Server.Version}}' 2>$null)
+$ver = Invoke-Native docker version --format '{{.Server.Version}}'
 Write-Host "      Docker Engine $ver"
 
 Write-Host '[2/5] 准备 Dify 源码（只取 docker 目录）...' -ForegroundColor Cyan
@@ -76,7 +89,7 @@ if (-not (Test-Path $dockerDir)) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $difyRoot) | Out-Null
     & git clone --depth 1 --filter=blob:none --sparse $composeUrl $difyRoot
     Push-Location $difyRoot
-    try { & git sparse-checkout set docker } finally { Pop-Location }
+    try { Invoke-Native git sparse-checkout set docker } finally { Pop-Location }
 } else {
     Write-Host '      已存在，跳过克隆'
 }
@@ -103,7 +116,7 @@ if ($SkipUp) { Write-Host '跳过启动（-SkipUp）' -ForegroundColor Yellow; r
 
 Write-Host '[5/5] docker compose up -d ...' -ForegroundColor Cyan
 Push-Location $dockerDir
-try { & docker compose up -d --build } finally { Pop-Location }
+try { Invoke-Native docker compose up -d --build } finally { Pop-Location }
 
 Write-Host ''
 Write-Host '完成。检查：' -ForegroundColor Green

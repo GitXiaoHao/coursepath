@@ -27,8 +27,16 @@ import urllib.request
 from pathlib import Path
 
 BASE = os.environ.get("DIFY_BASE_URL", "http://localhost")
+def _require_password() -> str:
+    if not PASSWORD:
+        raise SystemExit(
+            "请先设置环境变量 DIFY_ADMIN_PASSWORD（本机 Dify 管理员密码），"
+            "例如：$env:DIFY_ADMIN_PASSWORD = '<你的密码>'")
+    return PASSWORD
+
+
 EMAIL = os.environ.get("DIFY_ADMIN_EMAIL", "admin@campus-kb.local")
-PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "CampusKb2026!")
+PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 
 ENV_FILE = Path(__file__).parent / "dify" / "docker" / ".env"
 API_NAME = "campus-kb-connector"
@@ -81,7 +89,7 @@ class Dify:
 
     def login(self) -> None:
         # Dify 控制台要求密码先 base64，成功后靠 cookie 维持会话
-        pw = base64.b64encode(PASSWORD.encode()).decode()
+        pw = base64.b64encode(_require_password().encode()).decode()
         status, body = self._request(
             "POST",
             "/console/api/login",

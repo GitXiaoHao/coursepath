@@ -14,8 +14,16 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost"
+def _require_password() -> str:
+    if not PASSWORD:
+        raise SystemExit(
+            "请先设置环境变量 DIFY_ADMIN_PASSWORD（本机 Dify 管理员密码），"
+            "例如：$env:DIFY_ADMIN_PASSWORD = '<你的密码>'")
+    return PASSWORD
+
+
 EMAIL = "admin@campus-kb.local"
-PASSWORD = "CampusKb2026!"
+PASSWORD = os.environ.get("DIFY_ADMIN_PASSWORD", "")
 OUT = Path(__file__).resolve().parent / ".build"
 APP_NAME = "课径 · 可核算的培养方案问答"
 
@@ -32,7 +40,7 @@ def login(page) -> None:
     time.sleep(1.0)
     shot(page, "01-signin")
     page.fill('input[type="email"], input[name="email"]', EMAIL)
-    page.fill('input[type="password"], input[name="password"]', PASSWORD)
+    page.fill('input[type="password"], input[name="password"]', _require_password())
     page.click('button[type="submit"]')
     page.wait_for_url(lambda u: "/signin" not in u, timeout=60_000)
     page.wait_for_load_state("networkidle")
