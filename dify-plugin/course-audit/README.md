@@ -84,7 +84,7 @@ so there is no API key, endpoint or OAuth configuration step.
 ## Source
 
 Full project (external knowledge-base service, Chatflow DSL, evaluation harness):
-see the repository link in this package's marketplace listing / release notes.
+see https://github.com/GitXiaoHao/coursepath.
 
 ## License
 

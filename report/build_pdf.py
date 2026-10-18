@@ -119,14 +119,17 @@ def find_edge() -> Path:
     raise SystemExit("未找到 Microsoft Edge，无法打印 PDF")
 
 
-def build() -> Path:
+def build(out: Path | None = None) -> Path:
+    target = out or OUT_PDF
+    target.parent.mkdir(parents=True, exist_ok=True)
     md_text = SRC.read_text(encoding="utf-8")
     html = render(md_text)
     OUT_HTML.parent.mkdir(parents=True, exist_ok=True)
     OUT_HTML.write_text(html, encoding="utf-8", newline="\n")
 
     edge = find_edge()
-    OUT_PDF.unlink(missing_ok=True)
+    if target.exists():
+        target.unlink()
     with tempfile.TemporaryDirectory() as tmp:
         cmd = [
             str(edge),
@@ -137,20 +140,21 @@ def build() -> Path:
             f"--user-data-dir={tmp}",
             "--no-pdf-header-footer",
             "--print-to-pdf-no-header",
-            f"--print-to-pdf={OUT_PDF}",
+            f"--print-to-pdf={target.resolve()}",
             OUT_HTML.as_uri(),
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-    if not OUT_PDF.exists():
+    if not target.exists():
         raise SystemExit(f"PDF 生成失败（edge exit={proc.returncode}）:\n{proc.stderr[-2000:]}")
-    return OUT_PDF
+    return target
 
 
-def report() -> int:
-    reader = PdfReader(str(OUT_PDF))
+def report(path: Path | None = None) -> int:
+    target = path or OUT_PDF
+    reader = PdfReader(str(target))
     pages = len(reader.pages)
-    size_mb = OUT_PDF.stat().st_size / (1024 * 1024)
-    print(f"PDF：{OUT_PDF}")
+    size_mb = target.stat().st_size / (1024 * 1024)
+    print(f"PDF：{target}")
     print(f"页数：{pages}（含封面；A4 门禁：正文 ≤15 页）")
     print(f"体积：{size_mb:.2f} MB（门禁：≤10 MB）")
     ok = pages <= 18 and size_mb <= 10
@@ -161,12 +165,14 @@ def report() -> int:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="导出技术报告 PDF")
     ap.add_argument("--check", action="store_true", help="只检查已生成的 PDF")
+    ap.add_argument("--out", type=Path, default=None, help="输出路径（默认 report/技术报告.pdf）")
     args = ap.parse_args(argv)
+    target = args.out or OUT_PDF
     if not args.check:
-        build()
-    if not OUT_PDF.exists():
+        target = build(args.out)
+    if not target.exists():
         raise SystemExit("PDF 不存在，先执行不带 --check 的构建")
-    return report()
+    return report(target)
 
 
 if __name__ == "__main__":
