@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+*.pdf -text
+*.faiss -text
+*.png -text
+*.jpg -text
+*.mp4 -text
