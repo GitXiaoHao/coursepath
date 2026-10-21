@@ -12,6 +12,7 @@ identity:
 tools:
   - tools/audit.yaml
   - tools/prereq.yaml
+  - tools/study_plan.yaml
 extra:
   python:
     source: provider/course_audit.py

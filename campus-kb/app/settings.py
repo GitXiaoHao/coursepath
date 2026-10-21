@@ -39,6 +39,12 @@ class Settings:
             os.environ.get("KB_PLAN", str(BASE_DIR / "data" / "samples" / "plan.json"))
         )
     )
+    #: 学生已修课程档案（SQLite）。仅保存课程状态，不保存原始对话内容。
+    profile_db_path: Path = field(
+        default_factory=lambda: Path(
+            os.environ.get("KB_PROFILE_DB", str(BASE_DIR / "data" / "profiles" / "profiles.sqlite3"))
+        )
+    )
     #: 融合策略：weighted | rrf
     fusion: str = field(default_factory=lambda: os.environ.get("KB_FUSION", "weighted"))
     #: 稠密通道权重（fusion=weighted 时生效）

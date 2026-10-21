@@ -19,9 +19,9 @@ workflow:
       enabled: false
     opening_statement: '你好，我是「课径」。可以问我：
 
-      1. 我修完这些课还差多少学分？（先在下方填已修课程代码，如 CS101,CS201）
+      1. 我修完这些课还差多少学分？（先在下方填已修课程代码，如 GE101,ME101）
 
-      2. 编译原理的先修要求是什么？我能选吗？
+      2. 汽车电子控制的先修要求是什么？我能选吗？
 
       每条回答都会给出依据条款与计算步骤。'
     retriever_resource:
@@ -32,7 +32,7 @@ workflow:
       enabled: false
     suggested_questions:
     - 毕业还差多少学分？
-    - 编译原理的先修要求是什么？
+    - 汽车电子控制的先修要求是什么？
     suggested_questions_after_answer:
       enabled: true
     text_to_speech:
@@ -121,7 +121,7 @@ workflow:
         title: 开始
         variables:
         - variable: completed
-          label: 已修课程代码（可选，逗号分隔，如 CS101,CS201）
+          label: 已修课程代码（可选，逗号分隔，如 CS101,EE101,VE201）
           type: text-input
           required: false
           max_length: 512
@@ -148,7 +148,7 @@ workflow:
         - sys
         - query
         dataset_ids:
-        - 85cd6c41-b93b-4fb9-8c52-104525b8d39e
+        - 13b4145a-882b-4bd0-a506-87d6043972a7
         retrieval_mode: multiple
         multiple_retrieval_config:
           top_k: 4
@@ -184,16 +184,19 @@ workflow:
           ]\n    for i, doc in enumerate(docs[:3], 1):\n        meta = doc.get(\"\
           metadata\") or {}\n        doc_meta = meta.get(\"doc_metadata\") or {}\n\
           \        page = doc_meta.get(\"page\") or \"\"\n        row = doc_meta.get(\"\
-          table_row\") or \"\"\n        loc = \"第 {} 页\".format(page) if page else\
-          \ \"\"\n        if row:\n            loc = \"{} 第 {} 行\".format(loc, row)\
-          \ if loc else \"第 {} 行\".format(row)\n        name = (doc.get(\"title\"\
+          table_row\") or \"\"\n        source_url = doc_meta.get(\"source_url\")\
+          \ or meta.get(\"source_url\") or \"\"\n        loc = \"第 {} 页\".format(page)\
+          \ if page else \"\"\n        if row:\n            loc = \"{} 第 {} 行\".format(loc,\
+          \ row) if loc else \"第 {} 行\".format(row)\n        name = (doc.get(\"title\"\
           ) or doc_meta.get(\"title\") or \"条款\").strip()\n        content = (doc.get(\"\
           content\") or \"\").strip().replace(\"\\n\", \" \")\n        if len(content)\
           \ > 100:\n            content = content[:100] + \"…\"\n        try:\n  \
           \          score = float(meta.get(\"score\") or doc_meta.get(\"score\")\
           \ or 0)\n        except (TypeError, ValueError):\n            score = 0.0\n\
-          \        lines.append(\"{}. {}（{}，匹配度 {:.2f}）：{}\".format(i, name, loc or\
-          \ \"位置未登记\", score, content))\n    return {\"text\": \"\\n\".join(lines)}\n"
+          \        link = \" [来源链接]({})\".format(source_url) if source_url else \"\
+          \"\n        lines.append(\"{}. {}（{}，匹配度 {:.2f}）：{}{}\".format(i, name,\
+          \ loc or \"位置未登记\", score, content, link))\n    return {\"text\": \"\\n\"\
+          .join(lines)}\n"
         variables:
         - variable: docs
           value_selector:

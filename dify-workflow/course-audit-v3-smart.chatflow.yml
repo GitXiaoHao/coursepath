@@ -1,0 +1,650 @@
+app:
+  description: 「课径」：把培养方案条款变成可核算的问答，每题都给引用与计算过程。
+  icon: 📘
+  icon_background: '#E0F2FE'
+  mode: advanced-chat
+  name: 课径 · 可核算的培养方案问答 v3（智能版）
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_size: 15
+      enabled: false
+    opening_statement: '你好，我是「课径」。可以问我：
+
+      1. 我修完这些课还差多少学分？（先在下方填已修课程代码，如 GE101,ME101）
+
+      2. 汽车电子控制的先修要求是什么？我能选吗？
+
+      每条回答都会给出依据条款与计算步骤。'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 毕业还差多少学分？
+    - 汽车电子控制的先修要求是什么？
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: knowledge-retrieval
+      id: start-source-kb
+      source: start
+      sourceHandle: source
+      target: kb
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: code
+      id: kb-source-cite
+      source: kb
+      sourceHandle: source
+      target: cite
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: cite-source-branch
+      source: cite
+      sourceHandle: source
+      target: branch
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-true-prereq
+      source: branch
+      sourceHandle: 'true'
+      target: prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-audit-audit
+      source: branch
+      sourceHandle: audit
+      target: audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: prereq-source-llm_prereq
+      source: prereq
+      sourceHandle: source
+      target: llm_prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_prereq-source-answer_prereq
+      source: llm_prereq
+      sourceHandle: source
+      target: answer_prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: audit-source-llm_audit
+      source: audit
+      sourceHandle: source
+      target: llm_audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_audit-source-answer_audit
+      source: llm_audit
+      sourceHandle: source
+      target: answer_audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: branch-false-llm_clause
+      source: branch
+      sourceHandle: 'false'
+      target: llm_clause
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_clause-source-answer_clause
+      source: llm_clause
+      sourceHandle: source
+      target: answer_clause
+      targetHandle: target
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        type: start
+        title: 开始
+        variables:
+        - variable: completed
+          label: 已修课程代码（可选，逗号分隔，如 CS101,EE101,VE201）
+          type: text-input
+          required: false
+          max_length: 512
+          options: []
+      height: 120
+      id: start
+      position:
+        x: 60
+        y: 260
+      positionAbsolute:
+        x: 60
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 280
+    - data:
+        desc: ''
+        selected: false
+        type: knowledge-retrieval
+        title: 培养方案检索（外部知识库）
+        query_variable_selector:
+        - sys
+        - query
+        dataset_ids:
+        - 13b4145a-882b-4bd0-a506-87d6043972a7
+        retrieval_mode: multiple
+        multiple_retrieval_config:
+          top_k: 4
+          score_threshold: null
+          reranking_enable: false
+          reranking_mode: reranking_model
+          reranking_model: null
+          weights: null
+        metadata_filtering_mode: disabled
+        vision:
+          enabled: false
+      height: 110
+      id: kb
+      position:
+        x: 400
+        y: 260
+      positionAbsolute:
+        x: 400
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: code
+        title: 整理检索条款
+        code_language: python3
+        code: "\ndef main(docs: list) -> dict:\n    if not docs:\n        return {\"\
+          text\": \"\\n> 未在知识库中检索到相关条款，请补充课程代码或换个问法。\"}\n    lines = [\"\", \"**相关条款（检索命中，可逐条核对）**\"\
+          ]\n    for i, doc in enumerate(docs[:3], 1):\n        meta = doc.get(\"\
+          metadata\") or {}\n        doc_meta = meta.get(\"doc_metadata\") or {}\n\
+          \        page = doc_meta.get(\"page\") or \"\"\n        row = doc_meta.get(\"\
+          table_row\") or \"\"\n        source_url = doc_meta.get(\"source_url\")\
+          \ or meta.get(\"source_url\") or \"\"\n        loc = \"第 {} 页\".format(page)\
+          \ if page else \"\"\n        if row:\n            loc = \"{} 第 {} 行\".format(loc,\
+          \ row) if loc else \"第 {} 行\".format(row)\n        name = (doc.get(\"title\"\
+          ) or doc_meta.get(\"title\") or \"条款\").strip()\n        content = (doc.get(\"\
+          content\") or \"\").strip().replace(\"\\n\", \" \")\n        if len(content)\
+          \ > 100:\n            content = content[:100] + \"…\"\n        try:\n  \
+          \          score = float(meta.get(\"score\") or doc_meta.get(\"score\")\
+          \ or 0)\n        except (TypeError, ValueError):\n            score = 0.0\n\
+          \        # 仅渲染可实际访问的链接；示例数据的 synthetic:// 地址会在前端显示为\n        # [blocked]，反而让用户误以为资料丢失。页码/行号仍保留作可核对依据。\n\
+          \        link = \" [来源链接]({})\".format(source_url) if source_url.startswith((\"\
+          http://\", \"https://\")) else \"\"\n        lines.append(\"{}. {}（{}，匹配度\
+          \ {:.2f}）：{}{}\".format(i, name, loc or \"位置未登记\", score, content, link))\n\
+          \    return {\"text\": \"\\n\".join(lines)}\n"
+        variables:
+        - variable: docs
+          value_selector:
+          - kb
+          - result
+        outputs:
+          text:
+            type: string
+            children: null
+      height: 120
+      id: cite
+      position:
+        x: 760
+        y: 260
+      positionAbsolute:
+        x: 760
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: if-else
+        title: 问题类型分流
+        logical_operator: or
+        cases:
+        - case_id: 'true'
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 先修
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 前置
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 能不能选
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 可以选
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 能否选
+        - case_id: audit
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 毕业
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 还差
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 缺多少
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 学分缺口
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 已修学分
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 总学分
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 完成学分
+      height: 150
+      id: branch
+      position:
+        x: 1080
+        y: 260
+      positionAbsolute:
+        x: 1080
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 280
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 先修链核算 /prereq
+        method: post
+        url: http://campus-kb:8080/prereq
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"course_name": "{{#sys.query#}}", "completed_text": "{{#start.completed#}}",
+              "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: prereq
+      position:
+        x: 1420
+        y: 60
+      positionAbsolute:
+        x: 1420
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 学分核算 /audit
+        method: post
+        url: http://campus-kb:8080/audit
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"completed_text": "{{#start.completed#}}", "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: audit
+      position:
+        x: 1420
+        y: 260
+      positionAbsolute:
+        x: 1420
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（条款）
+        answer: '{{#llm_clause.text#}}
+
+
+          ---
+
+          #### 依据原文
+
+          {{#cite.text#}}'
+      height: 140
+      id: answer_clause
+      position:
+        x: 1800
+        y: 500
+      positionAbsolute:
+        x: 1800
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（先修）
+        answer: '{{#llm_prereq.text#}}
+
+
+          ---
+
+          #### 可核对依据
+
+          {{#cite.text#}}
+
+
+          > 先修关系由确定性规则判定；AI 仅整理表述。'
+      height: 140
+      id: answer_prereq
+      position:
+        x: 2140
+        y: 60
+      positionAbsolute:
+        x: 2140
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（学分）
+        answer: '{{#llm_audit.text#}}
+
+
+          ---
+
+          #### 可核对依据
+
+          {{#cite.text#}}
+
+
+          > 学分由确定性程序核算；AI 仅整理表述。'
+      height: 140
+      id: answer_audit
+      position:
+        x: 2140
+        y: 260
+      positionAbsolute:
+        x: 2140
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: 仅整理系统结果与检索条款，不改变事实。
+        selected: false
+        type: llm
+        title: 千问润色（先修）
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径的培养方案咨询助手。只能依据输入回答；不得改动任何课程代码、课程名称、数值或满足/不满足结论；资料未说明时写“当前资料未说明”；先给结论，再给关键依据和下一步；不要编造课程、政策或教务审核结论。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【系统先修判定】
+
+            {{#prereq.body#}}
+
+
+            【检索依据】
+
+            {{#cite.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 260
+      id: llm_prereq
+      position:
+        x: 1760
+        y: 60
+      positionAbsolute:
+        x: 1760
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        desc: 仅整理系统结果与检索条款，不改变事实。
+        selected: false
+        type: llm
+        title: 千问润色（学分）
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径的培养方案咨询助手。只能依据输入回答；不得改动任何课程代码、课程名称、数值或满足/不满足结论；资料未说明时写“当前资料未说明”；先给结论，再给关键依据和下一步；不要编造课程、政策或教务审核结论。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【系统学分核算】
+
+            {{#audit.body#}}
+
+
+            【检索依据】
+
+            {{#cite.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 260
+      id: llm_audit
+      position:
+        x: 1760
+        y: 260
+      positionAbsolute:
+        x: 1760
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        desc: 仅整理系统结果与检索条款，不改变事实。
+        selected: false
+        type: llm
+        title: 千问问答（条款）
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径的培养方案咨询助手。只能依据输入回答；不得改动任何课程代码、课程名称、数值或满足/不满足结论；资料未说明时写“当前资料未说明”；先给结论，再给关键依据和下一步；不要编造课程、政策或教务审核结论。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【检索到的培养方案条款】
+
+            {{#cite.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 260
+      id: llm_clause
+      position:
+        x: 1420
+        y: 500
+      positionAbsolute:
+        x: 1420
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320

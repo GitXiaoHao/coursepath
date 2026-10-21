@@ -1,9 +1,9 @@
 app:
-  description: 只用 .difypkg 插件完成学分缺口核算，用于验证插件可独立工作。
+  description: 安装课径学业助手插件后即可导入的聊天工作流：自动分流学分、先修与修读规划问题。
   icon: 📐
   icon_background: '#E4FBCC'
   mode: advanced-chat
-  name: 课径插件演示 · 学分缺口核算
+  name: 课径插件演示 · 学业助手
   use_icon_as_answer_icon: false
 dependencies: []
 kind: app
@@ -40,26 +40,125 @@ workflow:
     - data:
         isInIteration: false
         sourceType: start
-        targetType: tool
-      id: start-tool
+        targetType: knowledge-retrieval
+      id: start-kb
       source: start
       sourceHandle: source
-      target: tool
+      target: kb
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: code
+      id: kb-cite
+      source: kb
+      sourceHandle: source
+      target: cite
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: llm
+      id: cite-llm_intent
+      source: cite
+      sourceHandle: source
+      target: llm_intent
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: llm_intent-intent_parse
+      source: llm_intent
+      sourceHandle: source
+      target: intent_parse
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: intent_parse-branch
+      source: intent_parse
+      sourceHandle: source
+      target: branch
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: tool
+      id: branch-prereq
+      source: branch
+      sourceHandle: prereq
+      target: prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: tool
+      id: branch-planner
+      source: branch
+      sourceHandle: study_plan
+      target: planner
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: tool
+      id: branch-audit
+      source: branch
+      sourceHandle: 'false'
+      target: audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: tool
+        targetType: llm
+      id: prereq-llm_prereq
+      source: prereq
+      sourceHandle: source
+      target: llm_prereq
       targetHandle: target
     - data:
         isInIteration: false
         sourceType: tool
         targetType: answer
-      id: tool-answer
-      source: tool
+      id: planner-answer_plan
+      source: planner
       sourceHandle: source
-      target: answer
+      target: answer_plan
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: tool
+        targetType: llm
+      id: audit-llm_audit
+      source: audit
+      sourceHandle: source
+      target: llm_audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_prereq-answer_prereq
+      source: llm_prereq
+      sourceHandle: source
+      target: answer_prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_audit-answer_audit
+      source: llm_audit
+      sourceHandle: source
+      target: answer_audit
       targetHandle: target
     nodes:
     - data:
         type: start
         title: 开始
-        desc: 输入已修课程，插件直接算出学分缺口
+        desc: 直接提问学分、先修或修读规划；插件按问题类型自动分流
         variables:
         - variable: completed
           label: 已修课程
@@ -67,6 +166,13 @@ workflow:
           type: text-input
           required: false
           max_length: 512
+          options: []
+        - variable: plan_json
+          label: 培养方案 JSON（可选）
+          description: 留空使用内置演示方案；真实部署时由学校提供经核验的方案数据。
+          type: paragraph
+          required: false
+          max_length: 30000
           options: []
       height: 90
       id: start
@@ -76,6 +182,290 @@ workflow:
       positionAbsolute:
         x: 60
         y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        type: knowledge-retrieval
+        title: 培养方案知识库检索
+        query_variable_selector:
+        - sys
+        - query
+        dataset_ids:
+        - 13b4145a-882b-4bd0-a506-87d6043972a7
+        retrieval_mode: multiple
+        multiple_retrieval_config:
+          top_k: 3
+          score_threshold: null
+          reranking_enable: false
+          reranking_mode: reranking_model
+          reranking_model: null
+          weights: null
+        metadata_filtering_mode: disabled
+        vision:
+          enabled: false
+      height: 120
+      id: kb
+      position:
+        x: 380
+        y: 260
+      positionAbsolute:
+        x: 380
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        type: code
+        title: 整理可核对引用
+        code_language: python3
+        code: "\ndef main(docs: list) -> dict:\n    if not docs:\n        return {\"\
+          text\": \"> 未检索到相关培养方案条款。\"}\n    lines = [\"#### 可核对依据\"]\n    for i, doc\
+          \ in enumerate(docs[:3], 1):\n        meta = doc.get(\"metadata\") or {}\n\
+          \        nested = meta.get(\"doc_metadata\") or {}\n        page = nested.get(\"\
+          page\") or meta.get(\"page\")\n        row = nested.get(\"table_row\") or\
+          \ meta.get(\"table_row\")\n        loc = (\"第 {} 页\".format(page) if page\
+          \ else \"\")\n        if row:\n            loc = \"{} 第 {} 行\".format(loc,\
+          \ row) if loc else \"第 {} 行\".format(row)\n        title = doc.get(\"title\"\
+          ) or nested.get(\"title\") or meta.get(\"doc_title\") or \"培养方案条款\"\n  \
+          \      content = \" \".join((doc.get(\"content\") or \"\").splitlines()).strip()\n\
+          \        lines.append(\"{}. {}（{}）：{}\".format(i, title, loc or \"位置未登记\"\
+          , content[:160]))\n    return {\"text\": chr(10).join(lines)}\n"
+        variables:
+        - variable: docs
+          value_selector:
+          - kb
+          - result
+        outputs:
+          text:
+            type: string
+            children: null
+      height: 150
+      id: cite
+      position:
+        x: 720
+        y: 260
+      positionAbsolute:
+        x: 720
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 280
+    - data:
+        type: llm
+        title: 千问意图识别
+        desc: 仅识别应调用的工具；不计算、不补充任何课程事实。
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0
+        prompt_template:
+        - role: system
+          text: 你是严格的工作流路由器，只输出 JSON，不要 Markdown 或解释。intent 只能是 audit、prereq、study_plan。询问毕业还差多少学分、已修课程后剩多少学分、模块学分缺口为
+            audit；询问课程先修条件、是否能选课为 prereq；询问下一步修什么、推荐课程、修读或选课规划为 study_plan。无法确定时输出
+            audit。completed_courses 只能列出用户明确表示已修、修过、已通过或修完的课程代码；不要把正在询问能否选的目标课程列入，不要从课程名称猜课程代码，不要补全。格式：{\"intent\":\"audit\",\"completed_courses\":[\"CS101\"]}
+        - role: user
+          text: 用户问题：{{#sys.query#}}
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 220
+      id: llm_intent
+      position:
+        x: 380
+        y: 220
+      positionAbsolute:
+        x: 380
+        y: 220
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        type: code
+        title: 校验意图
+        desc: 校验千问输出；仅合并用户明确声明的已修课程，异常时保守回退。
+        code_language: python3
+        code: "\nimport json\nimport re\n\nPREREQ_WORDS = (\"先修\", \"前置\", \"能不能选\"\
+          , \"能否选\", \"可以选\")\nPLAN_WORDS = (\"修读规划\", \"选课建议\", \"推荐课程\", \"推荐我\"\
+          , \"下一步修\")\n\nCODE = re.compile(r\"(?<![A-Za-z0-9])([A-Za-z]{2,6}\\d{2,4})(?![A-Za-z0-9])\"\
+          )\n\ndef codes_in(text: str) -> list:\n    return [item.upper() for item\
+          \ in CODE.findall(text or \"\")]\n\ndef target_codes_in(text: str) -> set:\n\
+          \    \"\"\"排除紧邻“能选/先修”等问法的目标课程代码，避免模型误把它当已修。\"\"\"\n    targets = set()\n\
+          \    raw = text or \"\"\n    for match in CODE.finditer(raw):\n        #\
+          \ 只看代码紧邻的短片段；不能把“VE201，VE205 能选吗”中的 VE201 误排除。\n        before = raw[max(0,\
+          \ match.start() - 4):match.start()]\n        after = raw[match.end():match.end()\
+          \ + 4]\n        if any(word in before or word in after for word in (\"能选\"\
+          , \"选吗\", \"先修\", \"前置\")):\n            targets.add(match.group(1).upper())\n\
+          \    return targets\n\ndef main(model_text: str, query: str, form_completed:\
+          \ str) -> dict:\n    raw = model_text or \"\"\n    match = re.search(r\"\
+          \\{.*?\\}\", raw, re.S)\n    data = {}\n    if match:\n        try:\n  \
+          \          data = json.loads(match.group(0))\n        except (TypeError,\
+          \ ValueError):\n            data = {}\n    intent = str(data.get(\"intent\"\
+          ) or \"\").lower()\n    if intent not in (\"audit\", \"prereq\", \"study_plan\"\
+          ):\n        text = query or \"\"\n        if any(word in text for word in\
+          \ PREREQ_WORDS):\n            intent = \"prereq\"\n        elif any(word\
+          \ in text for word in PLAN_WORDS):\n            intent = \"study_plan\"\n\
+          \        else:\n            intent = \"audit\"\n    # 表单是用户显式录入，优先保留。模型提取的课程必须同时：格式合法、原文出现、\n\
+          \    # 且用户这轮确实使用了完成状态表述；不从课程名称或常识推断代码。\n    completed = codes_in(form_completed)\n\
+          \    completion_claimed = any(word in (query or \"\") for word in (\"已修\"\
+          , \"修过\", \"学过\", \"已通过\", \"通过了\", \"已完成\", \"修完\"))\n    model_courses\
+          \ = data.get(\"completed_courses\") or []\n    if isinstance(model_courses,\
+          \ str):\n        model_courses = codes_in(model_courses)\n    query_codes\
+          \ = set(codes_in(query))\n    target_codes = target_codes_in(query)\n  \
+          \  if completion_claimed and isinstance(model_courses, list):\n        for\
+          \ item in model_courses:\n            code = str(item).upper().strip()\n\
+          \            if re.fullmatch(r\"[A-Z]{2,6}\\d{2,4}\", code) and code in\
+          \ query_codes and code not in target_codes:\n                completed.append(code)\n\
+          \    return {\"intent\": intent, \"completed\": \",\".join(dict.fromkeys(completed))}\n"
+        variables:
+        - variable: model_text
+          value_selector:
+          - llm_intent
+          - text
+        - variable: query
+          value_selector:
+          - sys
+          - query
+        - variable: form_completed
+          value_selector:
+          - start
+          - completed
+        outputs:
+          intent:
+            type: string
+            children: null
+          completed:
+            type: string
+            children: null
+      height: 150
+      id: intent_parse
+      position:
+        x: 760
+        y: 250
+      positionAbsolute:
+        x: 760
+        y: 250
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 260
+    - data:
+        type: if-else
+        title: 按意图分流（千问 + 校验）
+        logical_operator: or
+        cases:
+        - case_id: prereq
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - intent_parse
+            - intent
+            comparison_operator: contains
+            value: prereq
+        - case_id: study_plan
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - intent_parse
+            - intent
+            comparison_operator: contains
+            value: study_plan
+      height: 160
+      id: branch
+      position:
+        x: 1090
+        y: 260
+      positionAbsolute:
+        x: 1090
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 280
+    - data:
+        type: tool
+        title: 先修判定（插件）
+        desc: 从问题中识别目标课程，并用已修课程做确定性判定
+        provider_id: coursepath/course_audit/course_audit
+        provider_type: plugin
+        provider_name: coursepath/course_audit/course_audit
+        tool_name: prereq_check
+        tool_label: Prerequisite check
+        tool_configurations: {}
+        tool_parameters:
+          course:
+            type: mixed
+            value: '{{#sys.query#}}'
+          completed:
+            type: mixed
+            value: '{{#intent_parse.completed#}}'
+          plan_json:
+            type: mixed
+            value: '{{#start.plan_json#}}'
+        tool_node_version: '2'
+        plugin_unique_identifier: coursepath/course_audit:0.2.1@73c71035aaf6aaf5d9f404ff2e928841c64c8b14426530fd32e249c07c988a40
+      height: 90
+      id: prereq
+      position:
+        x: 1440
+        y: 60
+      positionAbsolute:
+        x: 1440
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        type: tool
+        title: 修读规划（插件）
+        desc: 只依据培养方案先修规则与模块缺口生成候选课，不替代教务选课
+        provider_id: coursepath/course_audit/course_audit
+        provider_type: plugin
+        provider_name: coursepath/course_audit/course_audit
+        tool_name: study_plan
+        tool_label: Study plan suggestions
+        tool_configurations: {}
+        tool_parameters:
+          completed:
+            type: mixed
+            value: '{{#intent_parse.completed#}}'
+          limit:
+            type: constant
+            value: 6
+          plan_json:
+            type: mixed
+            value: '{{#start.plan_json#}}'
+        tool_node_version: '2'
+        plugin_unique_identifier: coursepath/course_audit:0.2.1@73c71035aaf6aaf5d9f404ff2e928841c64c8b14426530fd32e249c07c988a40
+      height: 90
+      id: planner
+      position:
+        x: 1440
+        y: 270
+      positionAbsolute:
+        x: 1440
+        y: 270
       selected: false
       sourcePosition: right
       targetPosition: left
@@ -94,20 +484,132 @@ workflow:
         tool_parameters:
           completed:
             type: mixed
-            value: '{{#start.completed#}}'
+            value: '{{#intent_parse.completed#}}'
           plan_json:
             type: mixed
-            value: ''
+            value: '{{#start.plan_json#}}'
         tool_node_version: '2'
-        plugin_unique_identifier: coursepath/course_audit:0.1.1@2da1f4656136caf97169bfbae3c798f4fc33d4cb4f72a720df861cb16173bc5e
+        plugin_unique_identifier: coursepath/course_audit:0.2.1@73c71035aaf6aaf5d9f404ff2e928841c64c8b14426530fd32e249c07c988a40
       height: 90
-      id: tool
+      id: audit
       position:
-        x: 400
-        y: 260
+        x: 1440
+        y: 480
       positionAbsolute:
-        x: 400
-        y: 260
+        x: 1440
+        y: 480
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        type: llm
+        title: 千问润色（先修）
+        desc: 只整理插件已给出的结论，不参与计算或判定。
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径学业助手的表达层。只能依据【工具结果】回答，工具结果是唯一事实来源。不得添加、猜测、纠正或省略其中的课程、课程代码、学分、先修条件、可选结论或教务规则；工具结果无法判断时，直接说明缺少什么，不要自行判断。用自然、简洁的中文直接回答用户，通常
+            2–5 个短段落或列表；不要使用“关键依据”“下一步”“系统提示”等模板标题，不要提及模型、工作流或插件。修读建议必须保留“不能替代正式选课”的限制。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【工具结果】
+
+            {{#prereq.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 200
+      id: llm_prereq
+      position:
+        x: 1780
+        y: 60
+      positionAbsolute:
+        x: 1780
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        type: llm
+        title: 千问润色（核算）
+        desc: 只整理插件已给出的结论，不参与计算或判定。
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径学业助手的表达层。只能依据【工具结果】回答，工具结果是唯一事实来源。不得添加、猜测、纠正或省略其中的课程、课程代码、学分、先修条件、可选结论或教务规则；工具结果无法判断时，直接说明缺少什么，不要自行判断。用自然、简洁的中文直接回答用户，通常
+            2–5 个短段落或列表；不要使用“关键依据”“下一步”“系统提示”等模板标题，不要提及模型、工作流或插件。修读建议必须保留“不能替代正式选课”的限制。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【工具结果】
+
+            {{#audit.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 200
+      id: llm_audit
+      position:
+        x: 1780
+        y: 480
+      positionAbsolute:
+        x: 1780
+        y: 480
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        type: answer
+        title: 先修结果
+        desc: ''
+        answer: '{{#llm_prereq.text#}}
+
+
+          ---
+
+          {{#cite.text#}}'
+        variables: []
+      height: 90
+      id: answer_prereq
+      position:
+        x: 2160
+        y: 60
+      positionAbsolute:
+        x: 2160
+        y: 60
       selected: false
       sourcePosition: right
       targetPosition: left
@@ -115,18 +617,42 @@ workflow:
       width: 244
     - data:
         type: answer
-        title: 回答
+        title: 规划结果
         desc: ''
-        answer: '{{#tool.text#}}'
+        answer: '{{#planner.text#}}'
         variables: []
       height: 90
-      id: answer
+      id: answer_plan
       position:
-        x: 760
-        y: 260
+        x: 2160
+        y: 270
       positionAbsolute:
-        x: 760
-        y: 260
+        x: 2160
+        y: 270
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        type: answer
+        title: 核算结果
+        desc: ''
+        answer: '{{#llm_audit.text#}}
+
+
+          ---
+
+          {{#cite.text#}}'
+        variables: []
+      height: 90
+      id: answer_audit
+      position:
+        x: 2160
+        y: 480
+      positionAbsolute:
+        x: 2160
+        y: 480
       selected: false
       sourcePosition: right
       targetPosition: left

@@ -1,0 +1,49 @@
+identity:
+  name: "study_plan"
+  author: "coursepath"
+  label:
+    en_US: "Study plan suggestions"
+    zh_Hans: "修读规划建议"
+description:
+  human:
+    en_US: "List uncompleted courses whose registered prerequisites are currently satisfied, prioritized by module credit gap."
+    zh_Hans: "列出当前已满足登记先修条件的未修课程，并按模块学分缺口给出可核对的修读建议。"
+  llm: "Given a study-plan JSON and completed course codes, return courses that can currently be considered. This is a suggestion only: it does not know timetable, capacity, conflicts, or registrar restrictions."
+parameters:
+  - name: completed
+    type: string
+    required: false
+    label:
+      en_US: "Completed courses"
+      zh_Hans: "已修课程"
+    human_description:
+      en_US: "Course codes separated by comma, semicolon or Chinese comma."
+      zh_Hans: "已通过的课程代码，使用逗号、分号或顿号分隔。"
+    llm_description: "Completed and passed course codes, comma separated."
+    form: llm
+  - name: limit
+    type: number
+    required: false
+    default: 6
+    label:
+      en_US: "Maximum suggestions"
+      zh_Hans: "最多推荐门数"
+    human_description:
+      en_US: "1 to 12; defaults to 6."
+      zh_Hans: "范围 1–12，默认 6。"
+    llm_description: "Maximum number of suggestions, 1 to 12."
+    form: form
+  - name: plan_json
+    type: string
+    required: false
+    label:
+      en_US: "Study plan JSON (optional)"
+      zh_Hans: "培养方案 JSON（可选）"
+    human_description:
+      en_US: "Leave empty to use the bundled demo plan."
+      zh_Hans: "留空则使用内置示例方案。"
+    llm_description: "Study plan JSON. Omit to use the bundled demo plan."
+    form: llm
+extra:
+  python:
+    source: tools/study_plan.py

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from fastapi import APIRouter, Header, Request
@@ -20,6 +21,15 @@ from core.schema import CompletedCourse, CreditPlan, parse_completed_text
 router = APIRouter(tags=["course-audit"])
 
 
+# 仅在用户明确用「已修／修过／已通过」这类措辞陈述课程时才兜底识别，
+# 避免将问题中被查询的课程代码误当成已完成课程。
+_COMPLETED_CLAUSE_RE = re.compile(
+    r"(?:已修(?:完)?|修过|已通过|通过了|完成(?:了)?)([^。！？!?；;]*)",
+    re.IGNORECASE,
+)
+_COURSE_CODE_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,6}\d{2,4})(?![A-Za-z0-9])")
+
+
 class Target(BaseModel):
     major: str | None = None
     module: str | None = None
@@ -31,9 +41,10 @@ class AuditRequest(BaseModel):
     completed: list[CompletedCourse] = Field(default_factory=list)
     #: 对话友好的输入形态：用户在对话框直接粘的课程串，如 ``MA101,CS201:4``
     completed_text: str | None = None
+    profile_id: str | None = None
     #: ``text`` 时直接返回 Markdown 摘要（Chatflow 的 answer 节点可直接引用
     #: ``{{#node.body#}}``；JSON 响应体在 Dify 里是字符串，取不到子字段）
-    format: Literal["json", "text"] = "json"
+    format: Literal["json", "text", "brief"] = "json"
 
 
 class PrereqRequest(BaseModel):
@@ -42,7 +53,8 @@ class PrereqRequest(BaseModel):
     course_name: str | None = None
     completed: list[CompletedCourse] = Field(default_factory=list)
     completed_text: str | None = None
-    format: Literal["json", "text"] = "json"
+    profile_id: str | None = None
+    format: Literal["json", "text", "brief"] = "json"
 
 
 def _merge_completed(payload_completed: list[CompletedCourse], completed_text: str | None, plan: CreditPlan) -> list[CompletedCourse]:
@@ -67,6 +79,27 @@ def _merge_completed(payload_completed: list[CompletedCourse], completed_text: s
     return merged
 
 
+def _infer_completed_text_from_question(question: str | None) -> str | None:
+    """从自然语言问题中提取明确声明为已修的课程代码。
+
+    这是 Dify HTTP 节点字段被旧草稿覆盖或未映射时的兼容措施；它不是跨轮次
+    的学生档案，也不会根据任意出现在问题里的课程代码臆测已修状态。
+    """
+    codes: list[str] = []
+    for clause in _COMPLETED_CLAUSE_RE.findall(question or ""):
+        for code in _COURSE_CODE_RE.findall(clause):
+            normalized = code.upper()
+            if normalized not in codes:
+                codes.append(normalized)
+    return ",".join(codes) or None
+
+
+def _resolve_completed(request: Request, profile_id: str | None, payload_completed: list[CompletedCourse], completed_text: str | None) -> list[CompletedCourse]:
+    """合并档案与本次输入；仅将本次明确给出的课程写入档案。"""
+    current = _merge_completed(payload_completed, completed_text, request.app.state.plan)
+    return request.app.state.profile_store.merge_courses(profile_id, current)
+
+
 def _get_plan(request: Request, plan_id: str | None):
     plan = getattr(request.app.state, "plan", None)
     if plan is None:
@@ -82,7 +115,13 @@ def audit(payload: AuditRequest, request: Request, authorization: str | None = H
     check_bearer(settings, authorization)
     plan = _get_plan(request, payload.plan_id)
 
-    completed = _merge_completed(payload.completed, payload.completed_text, plan)
+    if not plan.calculation_available:
+        message = plan.calculation_notice or "当前资料库缺少可核验的培养方案课程表，不能进行学分核算。"
+        if payload.format == "text":
+            return PlainTextResponse(f"### 学分核算暂不可用\n{message}")
+        return {"status": "unavailable", "plan_id": plan.plan_id, "message": message}
+
+    completed = _resolve_completed(request, payload.profile_id, payload.completed, payload.completed_text)
     result = audit_credits(plan, completed)
     if payload.format == "text":
         return PlainTextResponse(result.summary())
@@ -97,11 +136,20 @@ def prereq(payload: PrereqRequest, request: Request, authorization: str | None =
     check_bearer(settings, authorization)
     plan = _get_plan(request, payload.plan_id)
 
+    if not plan.calculation_available:
+        message = plan.calculation_notice or "当前资料库缺少可核验的培养方案课程表，不能进行先修判定。"
+        if payload.format == "text":
+            return PlainTextResponse(f"### 先修判定暂不可用\n{message}")
+        return {"status": "unavailable", "plan_id": plan.plan_id, "message": message}
+
     identifier = payload.course_code or payload.course_name or ""
     if not identifier:
         raise api_error(400, 1001, "必须提供 course_code 或 course_name")
 
-    completed = _merge_completed(payload.completed, payload.completed_text, plan)
+    completed_text = payload.completed_text
+    if not payload.completed and not completed_text:
+        completed_text = _infer_completed_text_from_question(payload.course_name)
+    completed = _resolve_completed(request, payload.profile_id, payload.completed, completed_text)
     # credits 节点的求值需要各模块已修学分，因此先跑一遍核算
     audit_result = audit_credits(plan, completed)
     context = EvalContext(
@@ -111,6 +159,8 @@ def prereq(payload: PrereqRequest, request: Request, authorization: str | None =
     report = check_prerequisites(plan, identifier, context)
     if payload.format == "text":
         return PlainTextResponse(report.summary())
+    if payload.format == "brief":
+        return PlainTextResponse(report.brief())
     body = report.to_dict()
     body["plan_id"] = plan.plan_id
     return body

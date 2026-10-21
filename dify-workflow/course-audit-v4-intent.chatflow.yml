@@ -1,0 +1,993 @@
+app:
+  description: 「课径」：把培养方案条款变成可核算的问答，每题都给引用与计算过程。
+  icon: 📘
+  icon_background: '#E0F2FE'
+  mode: advanced-chat
+  name: 课径 · 可核算的培养方案问答 v8（精简回复版）
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_size: 15
+      enabled: false
+    opening_statement: '你好，我是「课径」。可以问我：
+
+      1. 我修完这些课还差多少学分？（先在下方填已修课程代码，如 GE101,ME101）
+
+      2. 汽车电子控制的先修要求是什么？我能选吗？
+
+      每条回答都会给出依据条款与计算步骤。'
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 毕业还差多少学分？
+    - 汽车电子控制的先修要求是什么？
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: knowledge-retrieval
+      id: start-source-kb
+      source: start
+      sourceHandle: source
+      target: kb
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: code
+      id: kb-source-cite
+      source: kb
+      sourceHandle: source
+      target: cite
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-true-prereq
+      source: branch
+      sourceHandle: 'true'
+      target: prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-audit-audit
+      source: branch
+      sourceHandle: audit
+      target: audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: prereq-source-llm_prereq
+      source: prereq
+      sourceHandle: source
+      target: llm_prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_prereq-source-answer_prereq
+      source: llm_prereq
+      sourceHandle: source
+      target: answer_prereq
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: audit-source-llm_audit
+      source: audit
+      sourceHandle: source
+      target: llm_audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_audit-source-answer_audit
+      source: llm_audit
+      sourceHandle: source
+      target: answer_audit
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: llm
+      id: branch-false-llm_clause
+      source: branch
+      sourceHandle: 'false'
+      target: llm_clause
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: llm_clause-source-answer_clause
+      source: llm_clause
+      sourceHandle: source
+      target: answer_clause
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: llm
+      id: cite-source-llm_intent
+      source: cite
+      sourceHandle: source
+      target: llm_intent
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: llm_intent-source-intent_parse
+      source: llm_intent
+      sourceHandle: source
+      target: intent_parse
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: intent_parse-source-branch
+      source: intent_parse
+      sourceHandle: source
+      target: branch
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-profile-profile
+      source: branch
+      sourceHandle: profile
+      target: profile
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: profile-source-answer_profile
+      source: profile
+      sourceHandle: source
+      target: answer_profile
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-study_plan-study_plan
+      source: branch
+      sourceHandle: study_plan
+      target: study_plan
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: study_plan-source-answer_study_plan
+      source: study_plan
+      sourceHandle: source
+      target: answer_study_plan
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: branch-profile_manage-profile_manage
+      source: branch
+      sourceHandle: profile_manage
+      target: profile_manage
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: profile_manage-source-answer_profile_manage
+      source: profile_manage
+      sourceHandle: source
+      target: answer_profile_manage
+      targetHandle: target
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        type: start
+        title: 开始
+        variables:
+        - variable: completed
+          label: 已修课程代码（可选，逗号分隔，如 CS101,EE101,VE201）
+          type: text-input
+          required: false
+          max_length: 512
+          options: []
+        - variable: profile_id
+          label: 档案标识
+          description: 首次自定一个固定标识（如学号或匿名昵称）；后续使用同一标识即可读取同一份课程档案。
+          type: text-input
+          required: true
+          max_length: 128
+          options: []
+      height: 120
+      id: start
+      position:
+        x: 60
+        y: 260
+      positionAbsolute:
+        x: 60
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 280
+    - data:
+        desc: ''
+        selected: false
+        type: knowledge-retrieval
+        title: 培养方案检索（外部知识库）
+        query_variable_selector:
+        - sys
+        - query
+        dataset_ids:
+        - 13b4145a-882b-4bd0-a506-87d6043972a7
+        retrieval_mode: multiple
+        multiple_retrieval_config:
+          top_k: 4
+          score_threshold: null
+          reranking_enable: false
+          reranking_mode: reranking_model
+          reranking_model: null
+          weights: null
+        metadata_filtering_mode: disabled
+        vision:
+          enabled: false
+      height: 110
+      id: kb
+      position:
+        x: 400
+        y: 260
+      positionAbsolute:
+        x: 400
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: code
+        title: 整理检索条款
+        code_language: python3
+        code: "\ndef main(docs: list) -> dict:\n    if not docs:\n        return {\"\
+          text\": \"\\n> 未在知识库中检索到相关条款，请补充课程代码或换个问法。\"}\n    lines = [\"\", \"**相关条款（检索命中，可逐条核对）**\"\
+          ]\n    for i, doc in enumerate(docs[:3], 1):\n        meta = doc.get(\"\
+          metadata\") or {}\n        doc_meta = meta.get(\"doc_metadata\") or {}\n\
+          \        page = doc_meta.get(\"page\") or \"\"\n        row = doc_meta.get(\"\
+          table_row\") or \"\"\n        source_url = doc_meta.get(\"source_url\")\
+          \ or meta.get(\"source_url\") or \"\"\n        loc = \"第 {} 页\".format(page)\
+          \ if page else \"\"\n        if row:\n            loc = \"{} 第 {} 行\".format(loc,\
+          \ row) if loc else \"第 {} 行\".format(row)\n        name = (doc.get(\"title\"\
+          ) or doc_meta.get(\"title\") or \"条款\").strip()\n        content = (doc.get(\"\
+          content\") or \"\").strip().replace(\"\\n\", \" \")\n        if len(content)\
+          \ > 100:\n            content = content[:100] + \"…\"\n        try:\n  \
+          \          score = float(meta.get(\"score\") or doc_meta.get(\"score\")\
+          \ or 0)\n        except (TypeError, ValueError):\n            score = 0.0\n\
+          \        # 仅渲染可实际访问的链接；示例数据的 synthetic:// 地址会在前端显示为\n        # [blocked]，反而让用户误以为资料丢失。页码/行号仍保留作可核对依据。\n\
+          \        link = \" [来源链接]({})\".format(source_url) if source_url.startswith((\"\
+          http://\", \"https://\")) else \"\"\n        lines.append(\"{}. {}（{}，匹配度\
+          \ {:.2f}）：{}{}\".format(i, name, loc or \"位置未登记\", score, content, link))\n\
+          \    return {\"text\": \"\\n\".join(lines)}\n"
+        variables:
+        - variable: docs
+          value_selector:
+          - kb
+          - result
+        outputs:
+          text:
+            type: string
+            children: null
+      height: 120
+      id: cite
+      position:
+        x: 760
+        y: 260
+      positionAbsolute:
+        x: 760
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: if-else
+        title: 按意图分流（千问 + 校验）
+        logical_operator: or
+        cases:
+        - case_id: profile_manage
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 删除
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 清空
+        - case_id: study_plan
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 修读规划
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 选课建议
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 推荐课程
+        - case_id: profile
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 我的档案
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 查看档案
+        - case_id: 'true'
+          logical_operator: and
+          conditions:
+          - variable_selector:
+            - intent_parse
+            - intent
+            comparison_operator: contains
+            value: prereq
+        - case_id: audit
+          logical_operator: and
+          conditions:
+          - variable_selector:
+            - intent_parse
+            - intent
+            comparison_operator: contains
+            value: audit
+      height: 150
+      id: branch
+      position:
+        x: 1080
+        y: 260
+      positionAbsolute:
+        x: 1080
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 280
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 先修链核算 /prereq
+        method: post
+        url: http://campus-kb:8080/prereq
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"course_name": "{{#sys.query#}}", "completed_text": "{{#intent_parse.completed#}}",
+              "profile_id": "{{#start.profile_id#}}", "format": "brief"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: prereq
+      position:
+        x: 1420
+        y: 60
+      positionAbsolute:
+        x: 1420
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 学分核算 /audit
+        method: post
+        url: http://campus-kb:8080/audit
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"completed_text": "{{#intent_parse.completed#}}", "profile_id":
+              "{{#start.profile_id#}}", "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: audit
+      position:
+        x: 1420
+        y: 260
+      positionAbsolute:
+        x: 1420
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（条款）
+        answer: '{{#llm_clause.text#}}
+
+
+          ---
+
+          {{#cite.text#}}'
+      height: 140
+      id: answer_clause
+      position:
+        x: 1800
+        y: 500
+      positionAbsolute:
+        x: 1800
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（先修）
+        answer: '{{#prereq.body#}}
+
+
+          ---
+
+          {{#cite.text#}}'
+      height: 140
+      id: answer_prereq
+      position:
+        x: 2140
+        y: 60
+      positionAbsolute:
+        x: 2140
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（学分）
+        answer: '{{#llm_audit.text#}}
+
+
+          ---
+
+          {{#cite.text#}}'
+      height: 140
+      id: answer_audit
+      position:
+        x: 2140
+        y: 260
+      positionAbsolute:
+        x: 2140
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: 系统判定已合并本轮输入与已修课程档案。
+        selected: false
+        type: llm
+        title: 千问润色（先修）
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径的先修课咨询助手。只依据输入中的系统先修判定和检索依据回答。系统先修判定已合并本轮输入与该用户保存的已修课程档案；无论【已识别已修课程】是否为空，都必须以系统的满足/不满足结论及缺失课程为准。不要因用户本轮未重复课程代码而说无法判断，也不要提及档案键、工作流或技术实现。不要讲上游间接先修、修读顺序或泛泛建议，除非系统结果明确要求。不编造课程、模块、政策或学分。输出
+            2 至 4 个短段落，不使用“关键依据/下一步”这种固定报告标题。
+        - role: user
+          text: 用户问题：{{#sys.query#}}\n【已识别已修课程】{{#intent_parse.completed#}}\n\n【系统先修判定】\n{{#prereq.body#}}\n\n【检索依据】\n{{#cite.text#}}
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 260
+      id: llm_prereq
+      position:
+        x: 1760
+        y: 60
+      positionAbsolute:
+        x: 1760
+        y: 60
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        desc: 仅整理系统结果与检索条款，不改变事实。
+        selected: false
+        type: llm
+        title: 千问润色（学分）
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径的学分结果表达层。只依据【系统学分核算】中的事实；不得改变数字、课程、模块或规则，不得补充任何未出现的政策或建议。用自然中文回答：首句直接说总剩余学分；随后用一行或短列表给出系统已有的模块缺口。不要使用“关键依据”“下一步”“结论”等模板标题，不要复述计算过程、规则编号、模型、工作流或技术实现。除非系统无法核算，否则不要求用户再次提供已经保存的课程。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【系统学分核算】
+
+            {{#audit.body#}}
+
+
+            【检索依据】
+
+            {{#cite.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 260
+      id: llm_audit
+      position:
+        x: 1760
+        y: 260
+      positionAbsolute:
+        x: 1760
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        desc: 仅整理系统结果与检索条款，不改变事实。
+        selected: false
+        type: llm
+        title: 千问问答（条款）
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0.2
+        prompt_template:
+        - role: system
+          text: 你是课径的培养方案问答表达层。只根据检索到的条款回答；资料没有明确写出的内容，就直接说“当前资料未说明”。先给简短答案，必要时补一两句说明。不要猜测、不要编造，不使用“关键依据”“下一步”“结论”等模板标题。
+        - role: user
+          text: '用户问题：{{#sys.query#}}
+
+
+            【检索到的培养方案条款】
+
+            {{#cite.text#}}'
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 260
+      id: llm_clause
+      position:
+        x: 1420
+        y: 500
+      positionAbsolute:
+        x: 1420
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        desc: 只分类和提取课程代码，不计算、不回答事实。
+        selected: false
+        type: llm
+        title: 千问意图识别与课程提取
+        model:
+          provider: langgenius/tongyi/tongyi
+          name: qwen-plus-latest
+          mode: chat
+          completion_params:
+            temperature: 0
+        prompt_template:
+        - role: system
+          text: 你是严格的工作流路由器。只输出 JSON，不要 Markdown 或解释。intent 只能是 audit、prereq、clause：询问毕业剩余/已修课程/课程修完后剩余学分为
+            audit；询问课程先修或能否选课为 prereq；其余培养方案条款为 clause。completed_courses 只能包含用户明确说已修完、已通过、已修的课程代码；不要猜测课程名称对应的代码。输出格式：{\"intent\":\"audit\",\"completed_courses\":[\"GE101\"]}
+        - role: user
+          text: 用户问题：{{#sys.query#}}\n表单已修课程：{{#start.completed#}}
+        prompt_config:
+          jinja2_variables: []
+        memory: null
+        context:
+          enabled: false
+          variable_selector: []
+        vision:
+          enabled: false
+        structured_output_enabled: false
+        reasoning_format: separated
+      height: 240
+      id: llm_intent
+      position:
+        x: 1080
+        y: 40
+      positionAbsolute:
+        x: 1080
+        y: 40
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 340
+    - data:
+        desc: ''
+        selected: false
+        type: code
+        title: 校验意图与已修课程
+        code_language: python3
+        code: "\nimport json\nimport re\n\nAUDIT_WORDS = (\"毕业\", \"还差\", \"缺多少\"\
+          , \"学分缺口\", \"已修学分\", \"总学分\", \"完成学分\", \"修完\", \"已修\", \"学过\", \"通过\"\
+          )\nPREREQ_WORDS = (\"先修\", \"前置\", \"能不能选\", \"可以选\", \"能否选\")\n\ndef main(model_text:\
+          \ str, query: str, form_completed: str) -> dict:\n    raw = model_text or\
+          \ \"\"\n    # 支持模型偶尔包裹在 Markdown code fence 里的 JSON。\n    match = re.search(r\"\
+          \\{.*?\\}\", raw, re.S)\n    data = {}\n    if match:\n        try:\n  \
+          \          data = json.loads(match.group(0))\n        except (TypeError,\
+          \ ValueError):\n            data = {}\n\n    intent = str(data.get(\"intent\"\
+          ) or \"\").lower()\n    text = query or \"\"\n    if intent not in (\"audit\"\
+          , \"prereq\", \"clause\"):\n        if any(word in text for word in PREREQ_WORDS):\n\
+          \            intent = \"prereq\"\n        elif any(word in text for word\
+          \ in AUDIT_WORDS):\n            intent = \"audit\"\n        else:\n    \
+          \        intent = \"clause\"\n\n    # 只接受规范课程代码；表单输入优先保留，模型抽取的代码补充到其后。\n\
+          \    found = re.findall(r\"\\b[A-Za-z]{2,6}\\d{2,4}\\b\", form_completed\
+          \ or \"\")\n    model_courses = data.get(\"completed_courses\") or []\n\
+          \    if isinstance(model_courses, str):\n        model_courses = re.findall(r\"\
+          \\b[A-Za-z]{2,6}\\d{2,4}\\b\", model_courses)\n    if isinstance(model_courses,\
+          \ list):\n        for course in model_courses:\n            value = str(course).upper().strip()\n\
+          \            if re.fullmatch(r\"[A-Z]{2,6}\\d{2,4}\", value):\n        \
+          \        found.append(value)\n    completed = \",\".join(dict.fromkeys(code.upper()\
+          \ for code in found))\n    return {\"intent\": intent, \"completed\": completed}\n"
+        variables:
+        - variable: model_text
+          value_selector:
+          - llm_intent
+          - text
+        - variable: query
+          value_selector:
+          - sys
+          - query
+        - variable: form_completed
+          value_selector:
+          - start
+          - completed
+        outputs:
+          intent:
+            type: string
+            children: null
+          completed:
+            type: string
+            children: null
+      height: 170
+      id: intent_parse
+      position:
+        x: 1460
+        y: 40
+      positionAbsolute:
+        x: 1460
+        y: 40
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 320
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 查看我的课程档案
+        method: post
+        url: http://campus-kb:8080/profile-summary
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"profile_id": "{{#start.profile_id#}}", "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: profile
+      position:
+        x: 1420
+        y: 500
+      positionAbsolute:
+        x: 1420
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（我的档案）
+        answer: '{{#profile.body#}}'
+      height: 140
+      id: answer_profile
+      position:
+        x: 1760
+        y: 500
+      positionAbsolute:
+        x: 1760
+        y: 500
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 生成修读规划
+        method: post
+        url: http://campus-kb:8080/study-plan
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"profile_id": "{{#start.profile_id#}}", "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: study_plan
+      position:
+        x: 1420
+        y: 700
+      positionAbsolute:
+        x: 1420
+        y: 700
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（修读规划）
+        answer: '{{#study_plan.body#}}'
+      height: 140
+      id: answer_study_plan
+      position:
+        x: 1780
+        y: 700
+      positionAbsolute:
+        x: 1780
+        y: 700
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 档案安全管理
+        method: post
+        url: http://campus-kb:8080/profile-command
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"profile_id": "{{#start.profile_id#}}", "query": "{{#sys.query#}}",
+              "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: profile_manage
+      position:
+        x: 1420
+        y: 900
+      positionAbsolute:
+        x: 1420
+        y: 900
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（档案安全管理）
+        answer: '{{#profile_manage.body#}}'
+      height: 140
+      id: answer_profile_manage
+      position:
+        x: 1780
+        y: 900
+      positionAbsolute:
+        x: 1780
+        y: 900
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
