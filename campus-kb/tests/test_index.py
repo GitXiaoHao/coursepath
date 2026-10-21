@@ -72,3 +72,37 @@ def test_stats_reports_dense_disabled_by_default(index: HybridIndex) -> None:
     assert stats["chunks"] == len(CHUNKS)
     assert stats["dense_enabled"] is False
     assert stats["embedder"] == "null"
+
+# --------------------------------------------------------------------- 课程名加权
+def _named_index() -> HybridIndex:
+    """同一门课出现在"课程设置"和"先修要求"两张表里，名字互相包含。"""
+    from core.schema import Chunk
+
+    chunks = [
+        Chunk(id="seq", content="课程设置｜汽车设计；学分：4", title="汽车设计", metadata={"course_code": "VE203", "table_kind": "courses"}),
+        Chunk(id="pre", content="先修要求｜汽车设计；先修：机械设计", title="汽车设计", metadata={"course_code": "VE203", "table_kind": "prereq"}),
+        Chunk(id="other", content="先修要求｜汽车车身设计；先修：汽车设计", title="汽车车身设计", metadata={"course_code": "VE214", "table_kind": "prereq"}),
+    ]
+    return HybridIndex(chunks, course_names={"VE203": "汽车设计", "VE214": "汽车车身设计"})
+
+
+def test_name_in_query_prefers_longest_course_name() -> None:
+    index = _named_index()
+    assert index.name_in_query("汽车车身设计要修什么") == "VE214"
+    assert index.name_in_query("汽车设计需要先修哪些课") == "VE203"
+    assert index.name_in_query("毕业还差多少学分") is None
+
+
+def test_name_boost_prefers_the_named_course_rows() -> None:
+    index = _named_index()
+    hits = index.search("汽车车身设计要修什么先修课", top_k=3)
+    assert hits[0].chunk.id == "other"  # 点名的课自己那行排第一
+    hits = index.search("汽车设计需要先修哪些课", top_k=3)
+    assert hits[0].chunk.metadata["course_code"] == "VE203"
+
+
+def test_name_boost_can_be_disabled_for_ablation() -> None:
+    index = _named_index()
+    with_boost = index.search("汽车车身设计要修什么先修课", top_k=1)[0]
+    without = index.search("汽车车身设计要修什么先修课", top_k=1, use_names=False)[0]
+    assert with_boost.score >= without.score

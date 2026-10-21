@@ -53,6 +53,7 @@ def settings(tmp_path) -> Settings:
         knowledge_id="k-test",
         corpus_path=tmp_path / "missing.jsonl",
         plan_path=tmp_path / "missing-plan.json",
+        profile_db_path=tmp_path / "profiles.sqlite3",
     )
 
 

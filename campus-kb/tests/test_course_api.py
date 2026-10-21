@@ -13,22 +13,23 @@ from tests.conftest import AUTH, CHUNKS
 def test_audit_returns_module_breakdown(client: TestClient) -> None:
     body = {
         "completed": [
-            {"code": "GE101", "credits": 6},
-            {"code": "GE102", "credits": 3},
-            {"code": "CS101", "credits": 4},
-            {"code": "CS201", "credits": 4},
+            {"code": "GE101", "credits": 4},
+            {"code": "GE102", "credits": 4},
+            {"code": "ME101", "credits": 3},
+            {"code": "VE201", "credits": 4},
         ]
     }
     data = client.post("/audit", json=body, headers=AUTH).json()
     rows = {row["module"]: row for row in data["modules"]}
-    assert rows["通识教育"]["earned"] == 9
-    assert rows["专业核心课"]["earned"] == 8
+    assert rows["通识教育"]["earned"] == 8
+    assert rows["工程基础"]["earned"] == 3
+    assert rows["专业核心课"]["earned"] == 4
     assert rows["专业选修课"]["earned"] == 0
-    # 剩余 = (48-9)+(56-8)+24+32
-    assert data["remaining_credits"] == 39 + 48 + 24 + 32
-    assert data["earned_credits"] == 17
+    # 剩余 = (48-8)+(34-3)+(46-4)+16+16
+    assert data["remaining_credits"] == 40 + 31 + 42 + 16 + 16
+    assert data["earned_credits"] == 15
     assert data["total_credits"] == 160
-    assert data["plan_id"] == "plan-demo-2026"
+    assert data["plan_id"] == "vehicle-engineering-demo-2025"
 
 
 def test_audit_explain_is_traceable(client: TestClient) -> None:
@@ -43,7 +44,7 @@ def test_audit_explain_is_traceable(client: TestClient) -> None:
 def test_audit_no_courses_left(client: TestClient) -> None:
     data = client.post("/audit", json={"completed": []}, headers=AUTH).json()
     assert data["remaining_credits"] == 160
-    assert len(data["gaps"]) == 4
+    assert len(data["gaps"]) == 5
 
 
 def test_audit_unknown_plan(client: TestClient) -> None:
@@ -66,35 +67,41 @@ def test_audit_without_plan_returns_503(settings) -> None:
 
 def test_prereq_by_code_ok(client: TestClient) -> None:
     body = {
-        "course_code": "CS305",
-        "completed": [{"code": "CS101", "credits": 4}, {"code": "CS201", "credits": 4}, {"code": "CS202", "credits": 4}],
+        "course_code": "VE205",
+        "completed": [
+            {"code": "EE101", "credits": 4},
+            {"code": "CS101", "credits": 3},
+            {"code": "VE201", "credits": 4},
+        ],
     }
     data = client.post("/prereq", json=body, headers=AUTH).json()
     assert data["ok"] is True
-    assert data["target"]["course_code"] == "CS305"
+    assert data["target"]["course_code"] == "VE205"
     assert data["blockers"] == []
 
 
 def test_prereq_by_name_blocked(client: TestClient) -> None:
-    body = {"course_name": "编译原理", "completed": [{"code": "CS101", "credits": 4}]}
+    body = {"course_name": "汽车电子控制", "completed": [{"code": "EE101", "credits": 4}]}
     data = client.post("/prereq", json=body, headers=AUTH).json()
     assert data["ok"] is False
-    assert {blocker["course_code"] for blocker in data["direct_blockers"]} == {"CS201", "CS202"}
+    assert {blocker["course_code"] for blocker in data["direct_blockers"]} == {"CS101", "VE201"}
 
 
-def test_prereq_or_branch_satisfied(client: TestClient) -> None:
-    body = {"course_code": "CS303", "completed": [{"code": "CS101", "credits": 4}, {"code": "CS202", "credits": 4}]}
+def test_prereq_and_branch_partially_met_is_blocked(client: TestClient) -> None:
+    """VE203 汽车设计：且（ME104、VE201），只满足一门仍判不满足。"""
+    body = {"course_code": "VE203", "completed": [{"code": "ME104", "credits": 4}]}
     data = client.post("/prereq", json=body, headers=AUTH).json()
-    assert data["ok"] is True
+    assert data["ok"] is False
+    assert {blocker["course_code"] for blocker in data["direct_blockers"]} == {"VE201"}
 
 
 def test_prereq_credits_gate(client: TestClient) -> None:
-    completed = [{"code": "CS101", "credits": 4}, {"code": "CS201", "credits": 4}]
-    body = {"course_code": "CS401", "completed": completed}
+    completed = [{"code": "VE201", "credits": 4}, {"code": "VE202", "credits": 4}]
+    body = {"course_code": "PR104", "completed": completed}
     data = client.post("/prereq", json=body, headers=AUTH).json()
     assert data["ok"] is False
     assert any(blocker.get("kind") == "credits" for blocker in data["direct_blockers"])
-    assert any(blocker.get("course_code") == "CS350" for blocker in data["direct_blockers"])
+    assert any(blocker.get("course_code") == "PR103" for blocker in data["direct_blockers"])
 
 
 def test_prereq_requires_identifier(client: TestClient) -> None:
@@ -104,12 +111,12 @@ def test_prereq_requires_identifier(client: TestClient) -> None:
 
 
 def test_prereq_requires_auth(client: TestClient) -> None:
-    assert client.post("/prereq", json={"course_code": "CS305"}).status_code == 401
+    assert client.post("/prereq", json={"course_code": "VE205"}).status_code == 401
 
 
 def test_health_reports_plan(client: TestClient) -> None:
     body = client.get("/health").json()
-    assert body["plan"]["plan_id"] == "plan-demo-2026"
+    assert body["plan"]["plan_id"] == "vehicle-engineering-demo-2025"
     assert body["plan"]["courses"] > 0
 
 
@@ -117,50 +124,50 @@ def test_health_reports_plan(client: TestClient) -> None:
 
 
 def test_audit_accepts_completed_text(client: TestClient) -> None:
-    data = client.post("/audit", json={"completed_text": "CS101, CS201"}, headers=AUTH).json()
+    data = client.post("/audit", json={"completed_text": "GE101, GE102"}, headers=AUTH).json()
     rows = {row["module"]: row for row in data["modules"]}
     # 没报学分时按培养方案补全（R3），否则会被当成 0 学分
-    assert rows["专业核心课"]["earned"] == 8
+    assert rows["通识教育"]["earned"] == 8
     assert data["warnings"] == []
 
 
 def test_audit_completed_text_accepts_cjk_separators(client: TestClient) -> None:
-    data = client.post("/audit", json={"completed_text": "CS101、CS201；CS310"}, headers=AUTH).json()
+    data = client.post("/audit", json={"completed_text": "GE101、GE102；GE104"}, headers=AUTH).json()
     rows = {row["module"]: row for row in data["modules"]}
-    assert rows["专业核心课"]["earned"] == 11
+    assert rows["通识教育"]["earned"] == 10
 
 
 def test_audit_completed_text_reports_credit_mismatch(client: TestClient) -> None:
-    data = client.post("/audit", json={"completed_text": "CS101:3"}, headers=AUTH).json()
+    data = client.post("/audit", json={"completed_text": "GE101:3"}, headers=AUTH).json()
     rows = {row["module"]: row for row in data["modules"]}
-    # R3：学分以培养方案登记的值为准（CS101 方案登记 4），学生上报 3 只触发告警
-    assert rows["专业核心课"]["earned"] == 4
+    # R3：学分以培养方案登记的值为准（GE101 方案登记 4），学生上报 3 只触发告警
+    assert rows["通识教育"]["earned"] == 4
     assert any("不一致" in warning for warning in data["warnings"])
 
 
 def test_audit_dedupes_across_both_inputs(client: TestClient) -> None:
-    body = {"completed": [{"code": "cs101", "credits": 4}], "completed_text": "CS101"}
+    body = {"completed": [{"code": "ge101", "credits": 4}], "completed_text": "GE101"}
     data = client.post("/audit", json=body, headers=AUTH).json()
     rows = {row["module"]: row for row in data["modules"]}
-    assert rows["专业核心课"]["earned"] == 4, "同一课程重复提交不应重复计分"
+    assert rows["通识教育"]["earned"] == 4, "同一课程重复提交不应重复计分"
 
 
 def test_audit_text_input_rejects_unknown_codes_gracefully(client: TestClient) -> None:
-    data = client.post("/audit", json={"completed_text": "CS101, ???"}, headers=AUTH).json()
+    data = client.post("/audit", json={"completed_text": "GE101, ???"}, headers=AUTH).json()
     assert data["remaining_credits"] < 160, "能识别的课程仍应计入"
 
 
 def test_prereq_accepts_completed_text(client: TestClient) -> None:
-    body = {"course_code": "CS305", "completed_text": "CS101 CS201 CS202"}
+    body = {"course_code": "VE205", "completed_text": "EE101 CS101 VE201"}
     data = client.post("/prereq", json=body, headers=AUTH).json()
     assert data["ok"] is True
 
 
 def test_summaries_are_present_and_actionable(client: TestClient) -> None:
-    audit = client.post("/audit", json={"completed_text": "CS101"}, headers=AUTH).json()
+    audit = client.post("/audit", json={"completed_text": "GE101"}, headers=AUTH).json()
     assert audit["summary"].startswith("### 学分核算")
     assert "还差" in audit["summary"]
 
-    prereq = client.post("/prereq", json={"course_code": "CS305"}, headers=AUTH).json()
+    prereq = client.post("/prereq", json={"course_code": "VE205"}, headers=AUTH).json()
     assert prereq["summary"].startswith("### 先修检查")
     assert "不满足" in prereq["summary"]

@@ -111,6 +111,10 @@ class CreditPlan(BaseModel):
     modules: list[ModuleRequirement] = Field(default_factory=list)
     courses: list[Course] = Field(default_factory=list)
     version: str = Field(default="0.0.0")
+    #: 只有拿到可核验的培养方案课程表后才允许作确定性学分/先修核算。
+    #: 公开简介版资料库可用于检索，但绝不能把推测出的学分或先修关系当成校方规则。
+    calculation_available: bool = True
+    calculation_notice: str = ""
 
     def course_map(self) -> dict[str, Course]:
         return {course.code: course for course in self.courses}
@@ -174,6 +178,8 @@ class CreditPlan(BaseModel):
             "total_credits": self.total_credits,
             "modules": [clean(module.model_dump(exclude_none=True)) for module in self.modules],
             "courses": [clean(course.model_dump(exclude_none=True)) for course in self.courses],
+            "calculation_available": self.calculation_available,
+            "calculation_notice": self.calculation_notice,
         }
 
 

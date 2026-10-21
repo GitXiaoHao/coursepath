@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import jieba
 from rank_bm25 import BM25Plus  # 用 Plus 变体：idf = log((N+1)/df) 恒非负，
@@ -22,6 +22,10 @@ from core.embeddings import Embedder, NullEmbedder, cosine
 from core.filters import matches
 from core.intent import INTENT_BOOST, preferred_tables
 from core.schema import Chunk
+
+#: 问题里出现某门课的完整名称时，该课自己的行比"另一门课提到它"更有用
+#: （例：问"汽车设计需要先修哪些课"，命中的可能是"汽车车身设计"那行的先修列）。
+NAME_BOOST = 1.25
 
 #: 极简停用词，避免"的/了/哪"等虚词主导 BM25。
 _STOPWORDS = frozenset(
@@ -72,6 +76,7 @@ class HybridIndex:
         fusion: str = "weighted",
         alpha: float = 0.5,
         rrf_k: int = 60,
+        course_names: Mapping[str, str] | None = None,
     ) -> None:
         if fusion not in {"weighted", "rrf"}:
             raise ValueError(f"未知融合策略: {fusion}")
@@ -80,6 +85,8 @@ class HybridIndex:
         self.fusion = fusion
         self.alpha = alpha
         self.rrf_k = rrf_k
+        #: 课程代码 -> 课程名称，用于"问题里点名某门课"的排序加权
+        self.course_names: dict[str, str] = dict(course_names or {})
 
         self._tokens: list[list[str]] = [tokenize(chunk.content) for chunk in self.chunks]
         # BM25Plus 在空语料上会除零，这里保留一个占位文档兜底
@@ -103,6 +110,24 @@ class HybridIndex:
         }
 
     # ---- 检索 ----
+    def name_in_query(self, query: str) -> str | None:
+        """返回问题里出现的**最长**课程名对应的课程代码；没有则 None。
+
+        只做"整名出现在问题里"的判断，不做模糊匹配——模糊匹配会把
+        "汽车设计"和"汽车车身设计"混在一起，正是本函数要避免的情况。
+        """
+        if not self.course_names:
+            return None
+        compact = query.replace(" ", "")
+        best_code: str | None = None
+        best_len = 0
+        for code, name in self.course_names.items():
+            if len(name) < 2:
+                continue
+            if name.replace(" ", "") in compact and len(name) > best_len:
+                best_code, best_len = code, len(name)
+        return best_code
+
     def search(
         self,
         query: str,
@@ -110,6 +135,7 @@ class HybridIndex:
         score_threshold: float = 0.0,
         metadata_condition: dict | None = None,
         use_intent: bool = True,
+        use_names: bool = True,
     ) -> list[Hit]:
         if not self.chunks or not query.strip():
             return []
@@ -176,6 +202,16 @@ class HybridIndex:
             hits = [
                 replace(hit, score=hit.score * INTENT_BOOST)
                 if hit.chunk.metadata.get("table_kind") in preferred
+                else hit
+                for hit in hits
+            ]
+
+        # 3.6) 课程名加权：问题里出现完整课程名时，优先该课自己的行。
+        named = self.name_in_query(query) if use_names else None
+        if named:
+            hits = [
+                replace(hit, score=hit.score * NAME_BOOST)
+                if hit.chunk.metadata.get("course_code") == named
                 else hit
                 for hit in hits
             ]

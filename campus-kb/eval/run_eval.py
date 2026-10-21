@@ -80,10 +80,13 @@ def completed_list(codes: Sequence[str] | Sequence[dict], plan: CreditPlan) -> l
 def eval_retrieval(plan_path: Path, doc_path: Path, top_k: int = 5) -> dict:
     """检索评测，同时给出"无意图加权"与"意图加权"两组数字（消融对照）。"""
     chunks = build_chunks(load_tables(doc_path), doc_id="plan-demo-2026")
-    index = HybridIndex(chunks)  # 无 embedder：纯 BM25 基线，任何人可复现
+    plan = load_plan(plan_path)
+    names = {course.code: course.name for course in plan.courses} if plan else {}
+    # 无 embedder：纯 BM25 基线，任何人可复现
+    index = HybridIndex(chunks, course_names=names)
     cases = load_cases("retrieval")
-    baseline = _score_retrieval(chunks, index, cases, top_k, use_intent=False)
-    boosted = _score_retrieval(chunks, index, cases, top_k, use_intent=True)
+    baseline = _score_retrieval(chunks, index, cases, top_k, use_intent=False, use_names=False)
+    boosted = _score_retrieval(chunks, index, cases, top_k, use_intent=True, use_names=True)
     return {
         "group": "retrieval",
         "corpus_chunks": len(chunks),
@@ -97,7 +100,9 @@ def eval_retrieval(plan_path: Path, doc_path: Path, top_k: int = 5) -> dict:
     }
 
 
-def _score_retrieval(chunks, index, cases, top_k: int, use_intent: bool) -> dict:
+def _score_retrieval(
+    chunks, index, cases, top_k: int, use_intent: bool, use_names: bool = True
+) -> dict:
     rows = []
     hits_at_1 = hits_at_k = rr_total = 0.0
     for case in cases:
@@ -108,7 +113,7 @@ def _score_retrieval(chunks, index, cases, top_k: int, use_intent: bool) -> dict
             for chunk in chunks
             if all(chunk.metadata.get(key) == value for key, value in expect.items())
         ]
-        ranked = [hit.chunk.id for hit in index.search(case["query"], top_k=top_k, use_intent=use_intent)]
+        ranked = [hit.chunk.id for hit in index.search(case["query"], top_k=top_k, use_intent=use_intent, use_names=use_names)]
         rr = reciprocal_rank(ranked, relevant)
         hit1 = recall_at_k(ranked, relevant, 1)
         hitk = recall_at_k(ranked, relevant, top_k)

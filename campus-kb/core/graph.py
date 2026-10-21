@@ -151,8 +151,22 @@ class PrereqReport:
             "chain": self.chain,
             "cycle": self.cycle,
             "notes": self.notes,
+            "brief": self.brief(),
             "summary": self.summary(),
         }
+
+    def brief(self) -> str:
+        """面向选课问答的最短、可复现结论。"""
+        if self.ok:
+            return "可以选。"
+        if self.direct:
+            courses = "、".join(
+                f"{item.get('course_name') or item.get('course_code')}（{item.get('course_code')}）"
+                if item.get('course_name') else str(item.get('course_code') or "")
+                for item in self.direct
+            )
+            return f"暂不能选。还需通过：{courses}。"
+        return "暂不能选。当前还有未满足的先修条件。"
 
     def summary(self) -> str:
         """面向对话的可读摘要（Markdown），与 ``AuditResult.summary`` 同构。"""

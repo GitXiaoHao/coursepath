@@ -12,10 +12,14 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 
 from app.api import course as course_api
+from app.api import profile as profile_api
+from app.api import planner as planner_api
 from app.api import retrieval as retrieval_api
+from app.profile_store import ProfileStore
 from app.settings import Settings
 from core.corpus import load_chunks, load_plan
 from core.index import HybridIndex
+from core.plan_catalog import build_plan_catalog_chunks
 from core.schema import CreditPlan
 
 logging.basicConfig(
@@ -25,14 +29,21 @@ logging.basicConfig(
 logger = logging.getLogger("campus-kb")
 
 
-def build_index(settings: Settings) -> HybridIndex:
+def build_index(settings: Settings, plan: CreditPlan | None = None) -> HybridIndex:
     chunks = load_chunks(settings.corpus_path)
+    if plan is not None:
+        # 原始条款不删除；额外加入从同一结构化方案生成的课程目录，方便按代码检索。
+        catalog = build_plan_catalog_chunks(plan)
+        known = {chunk.id for chunk in chunks}
+        chunks.extend(chunk for chunk in catalog if chunk.id not in known)
+        logger.info("装载课程目录 %s 条（计划 %s）", len(catalog), plan.plan_id)
     logger.info("装载语料 %s 条（%s）", len(chunks), settings.corpus_path)
     return HybridIndex(
         chunks=chunks,
         embedder=settings.build_embedder(),
         fusion=settings.fusion,
         alpha=settings.alpha,
+        course_names={course.code: course.name for course in plan.courses} if plan else None,
     )
 
 
@@ -45,11 +56,11 @@ def create_app(
     settings = settings or Settings.from_env()
     if settings.api_key == "dev-key":
         logger.warning("正在使用默认 API Key（dev-key），仅限本地自测；演示环境请设置 KB_API_KEY")
-    index = index if index is not None else build_index(settings)
     if plan is None:
         plan = load_plan(settings.plan_path)
     if plan is None:
         logger.warning("未加载到培养方案（%s），/audit 与 /prereq 将返回配置缺失错误", settings.plan_path)
+    index = index if index is not None else build_index(settings, plan)
 
     app = FastAPI(
         title="campus-kb",
@@ -62,9 +73,12 @@ def create_app(
     app.state.settings = settings
     app.state.index = index
     app.state.plan = plan
+    app.state.profile_store = ProfileStore(settings.profile_db_path)
 
     app.include_router(retrieval_api.router)
     app.include_router(course_api.router)
+    app.include_router(profile_api.router)
+    app.include_router(planner_api.router)
 
     @app.get("/health", tags=["ops"], summary="健康检查")
     def health() -> dict:
