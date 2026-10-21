@@ -32,7 +32,7 @@ VIDEO = REPO / "video" / "课径-演示视频.mp4"
 REPORT_PDF = REPO / "report" / "技术报告.pdf"
 ANNEX_PDF = REPO / "report" / "开源及第三方资源使用清单.pdf"
 INTRO_MD = REPO / "report" / "作品简介.md"
-PLUGIN = REPO / "dify-plugin" / "dist" / "course_audit-0.1.1.difypkg"
+PLUGIN = REPO / "dify-plugin" / "dist" / "course_audit-0.2.1.difypkg"
 REPO_URL = "https://github.com/GitXiaoHao/coursepath"
 WORK_TITLE = "课径 · 可核算的培养方案问答"
 

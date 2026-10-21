@@ -27,7 +27,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8088
 curl -s http://127.0.0.1:8088/health
 curl -s -X POST http://127.0.0.1:8088/retrieval \
   -H "Authorization: Bearer demo-key" -H "Content-Type: application/json" \
-  -d "{\"knowledge_id\":\"campus-kb\",\"query\":\"编译原理的先修要求\",\"retrieval_setting\":{\"top_k\":3,\"score_threshold\":0.0}}"
+  -d "{\"knowledge_id\":\"campus-kb\",\"query\":\"汽车设计需要先修哪些课程\",\"retrieval_setting\":{\"top_k\":3,\"score_threshold\":0.0}}"
 ```
 
 ## 环境变量
@@ -89,7 +89,7 @@ eval/                金标用例 + 可复现评测脚本（`python -m eval.run_
 
 ## 评测
 
-`docs/03-评测结果.md` 记录当前数字：检索 Recall@1 0.833 → 1.000（基线 → 意图加权）、
+`docs/03-评测结果.md` 记录当前数字：检索 Recall@1 0.692 → 1.000（基线 → 意图加权）、
 学分核算 7/7、先修判定 10/10，一条命令可复现。
 
 ## 待办（后续阶段）

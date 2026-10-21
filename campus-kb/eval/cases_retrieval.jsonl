@@ -10,3 +10,4 @@
 {"id": "R10", "query": "新能源汽车原理的先修要求", "expect": {"table_kind": "prereq", "course_code": "VE206"}}
 {"id": "R11", "query": "实践教学环节包含哪些内容", "expect": {"table_kind": "modules", "module": "实践教学环节"}}
 {"id": "R12", "query": "线性代数几个学分", "expect": {"table_kind": "courses", "course_code": "GE104"}}
+{"id": "R13", "query": "转专业后学分怎么认定", "expect": {"table_kind": "clause", "page": 4}}

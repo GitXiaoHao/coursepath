@@ -5,55 +5,934 @@
   "version": "demo-1.0.0",
   "total_credits": 160,
   "modules": [
-    {"module":"通识教育","required_credits":48,"source":{"doc_id":"vehicle-demo-plan-2025","title":"车辆工程示范培养方案","page":3,"table_row":1,"quote":"通识教育模块应修满 48 学分"}},
-    {"module":"工程基础","required_credits":34,"source":{"doc_id":"vehicle-demo-plan-2025","title":"车辆工程示范培养方案","page":5,"table_row":1,"quote":"工程基础模块应修满 34 学分"}},
-    {"module":"专业核心课","required_credits":46,"source":{"doc_id":"vehicle-demo-plan-2025","title":"车辆工程示范培养方案","page":8,"table_row":1,"quote":"专业核心课模块应修满 46 学分"}},
-    {"module":"专业选修课","required_credits":16,"source":{"doc_id":"vehicle-demo-plan-2025","title":"车辆工程示范培养方案","page":12,"table_row":1,"quote":"专业选修课模块应修满 16 学分"}},
-    {"module":"实践教学环节","required_credits":16,"source":{"doc_id":"vehicle-demo-plan-2025","title":"车辆工程示范培养方案","page":14,"table_row":1,"quote":"实践教学环节应修满 16 学分"}}
+    {
+      "module": "通识教育",
+      "required_credits": 48,
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "title": "车辆工程示范培养方案",
+        "page": 3,
+        "table_row": 1,
+        "quote": "通识教育模块应修满 48 学分"
+      }
+    },
+    {
+      "module": "工程基础",
+      "required_credits": 34,
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "title": "车辆工程示范培养方案",
+        "page": 5,
+        "table_row": 1,
+        "quote": "工程基础模块应修满 34 学分"
+      }
+    },
+    {
+      "module": "专业核心课",
+      "required_credits": 46,
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "title": "车辆工程示范培养方案",
+        "page": 8,
+        "table_row": 1,
+        "quote": "专业核心课模块应修满 46 学分"
+      }
+    },
+    {
+      "module": "专业选修课",
+      "required_credits": 16,
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "title": "车辆工程示范培养方案",
+        "page": 12,
+        "table_row": 1,
+        "quote": "专业选修课模块应修满 16 学分"
+      }
+    },
+    {
+      "module": "实践教学环节",
+      "required_credits": 16,
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "title": "车辆工程示范培养方案",
+        "page": 14,
+        "table_row": 1,
+        "quote": "实践教学环节应修满 16 学分"
+      }
+    }
   ],
   "courses": [
-    {"code":"GE101","name":"高等数学 I","credits":4,"module":"通识教育","terms":["2025-2026-1"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":2,"quote":"高等数学 I，4 学分"}},
-    {"code":"GE102","name":"高等数学 II","credits":4,"module":"通识教育","terms":["2025-2026-2"],"prerequisites":{"kind":"course","course_code":"GE101"},"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":3,"quote":"高等数学 II，先修高等数学 I，4 学分"}},
-    {"code":"GE103","name":"大学物理","credits":4,"module":"通识教育","terms":["2025-2026-2"],"prerequisites":{"kind":"course","course_code":"GE101"},"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":4,"quote":"大学物理，先修高等数学 I，4 学分"}},
-    {"code":"GE104","name":"线性代数","credits":2,"module":"通识教育","terms":["2025-2026-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":5,"quote":"线性代数，2 学分"}},
-    {"code":"GE105","name":"概率论与数理统计","credits":3,"module":"通识教育","terms":["2026-2027-1"],"prerequisites":{"kind":"course","course_code":"GE101"},"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":6,"quote":"概率论与数理统计，先修高等数学 I，3 学分"}},
-    {"code":"GE106","name":"大学英语","credits":6,"module":"通识教育","terms":["2025-2026-1","2025-2026-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":7,"quote":"大学英语，6 学分"}},
-    {"code":"GE107","name":"思想与道德","credits":10,"module":"通识教育","terms":["2025-2026-1","2025-2026-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":8,"quote":"思想与道德课程组，10 学分"}},
-    {"code":"GE108","name":"体育与健康","credits":4,"module":"通识教育","terms":["2025-2026-1","2025-2026-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":9,"quote":"体育与健康，4 学分"}},
-    {"code":"GE109","name":"计算机应用基础","credits":2,"module":"通识教育","terms":["2025-2026-1"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":10,"quote":"计算机应用基础，2 学分"}},
-    {"code":"GE110","name":"通识选修","credits":9,"module":"通识教育","terms":["2026-2027-1","2026-2027-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":3,"table_row":11,"quote":"通识选修，9 学分"}},
-    {"code":"ME101","name":"工程制图","credits":3,"module":"工程基础","terms":["2025-2026-1"],"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":2,"quote":"工程制图，3 学分"}},
-    {"code":"ME102","name":"工程力学","credits":4,"module":"工程基础","terms":["2025-2026-2"],"prerequisites":{"kind":"course","course_code":"GE101"},"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":3,"quote":"工程力学，先修高等数学 I，4 学分"}},
-    {"code":"ME103","name":"机械原理","credits":3,"module":"工程基础","terms":["2026-2027-1"],"prerequisites":{"kind":"course","course_code":"ME102"},"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":4,"quote":"机械原理，先修工程力学，3 学分"}},
-    {"code":"ME104","name":"机械设计","credits":4,"module":"工程基础","terms":["2026-2027-2"],"prerequisites":{"kind":"course","course_code":"ME103"},"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":5,"quote":"机械设计，先修机械原理，4 学分"}},
-    {"code":"ME105","name":"工程材料","credits":3,"module":"工程基础","terms":["2026-2027-1"],"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":6,"quote":"工程材料，3 学分"}},
-    {"code":"EE101","name":"电工电子技术","credits":4,"module":"工程基础","terms":["2026-2027-1"],"prerequisites":{"kind":"course","course_code":"GE103"},"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":7,"quote":"电工电子技术，先修大学物理，4 学分"}},
-    {"code":"CS101","name":"程序设计基础","credits":3,"module":"工程基础","terms":["2025-2026-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":8,"quote":"程序设计基础，3 学分"}},
-    {"code":"AE101","name":"汽车工程概论","credits":3,"module":"工程基础","terms":["2025-2026-1"],"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":9,"quote":"汽车工程概论，3 学分"}},
-    {"code":"MA101","name":"传感与测试技术","credits":3,"module":"工程基础","terms":["2026-2027-2"],"prerequisites":{"kind":"course","course_code":"GE103"},"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":10,"quote":"传感与测试技术，先修大学物理，3 学分"}},
-    {"code":"CT101","name":"控制工程基础","credits":4,"module":"工程基础","terms":["2026-2027-2"],"prerequisites":{"kind":"course","course_code":"GE102"},"source":{"doc_id":"vehicle-demo-plan-2025","page":5,"table_row":11,"quote":"控制工程基础，先修高等数学 II，4 学分"}},
-    {"code":"VE201","name":"汽车构造","credits":4,"module":"专业核心课","terms":["2026-2027-1"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"ME101"},{"kind":"course","course_code":"AE101"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":2,"quote":"汽车构造，先修工程制图和汽车工程概论，4 学分"}},
-    {"code":"VE202","name":"汽车理论","credits":4,"module":"专业核心课","terms":["2026-2027-2"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"VE201"},{"kind":"course","course_code":"ME102"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":3,"quote":"汽车理论，先修汽车构造和工程力学，4 学分"}},
-    {"code":"VE203","name":"汽车设计","credits":4,"module":"专业核心课","terms":["2027-2028-1"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"ME104"},{"kind":"course","course_code":"VE201"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":4,"quote":"汽车设计，先修机械设计和汽车构造，4 学分"}},
-    {"code":"VE204","name":"汽车制造工艺","credits":3,"module":"专业核心课","terms":["2027-2028-1"],"prerequisites":{"kind":"course","course_code":"ME104"},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":5,"quote":"汽车制造工艺，先修机械设计，3 学分"}},
-    {"code":"VE205","name":"汽车电子控制","credits":4,"module":"专业核心课","terms":["2027-2028-1"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"EE101"},{"kind":"course","course_code":"CS101"},{"kind":"course","course_code":"VE201"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":6,"quote":"汽车电子控制，先修电工电子技术、程序设计基础和汽车构造，4 学分"}},
-    {"code":"VE206","name":"新能源汽车原理","credits":3,"module":"专业核心课","terms":["2027-2028-1"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"VE201"},{"kind":"course","course_code":"EE101"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":7,"quote":"新能源汽车原理，先修汽车构造和电工电子技术，3 学分"}},
-    {"code":"VE207","name":"汽车试验学","credits":3,"module":"专业核心课","terms":["2027-2028-1"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"MA101"},{"kind":"course","course_code":"VE201"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":8,"quote":"汽车试验学，先修传感与测试技术和汽车构造，3 学分"}},
-    {"code":"VE208","name":"汽车动力学","credits":3,"module":"专业核心课","terms":["2027-2028-2"],"prerequisites":{"kind":"course","course_code":"VE202"},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":9,"quote":"汽车动力学，先修汽车理论，3 学分"}},
-    {"code":"VE209","name":"汽车底盘设计","credits":4,"module":"专业核心课","terms":["2027-2028-2"],"prerequisites":{"kind":"course","course_code":"VE203"},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":10,"quote":"汽车底盘设计，先修汽车设计，4 学分"}},
-    {"code":"VE210","name":"智能网联汽车基础","credits":3,"module":"专业核心课","terms":["2027-2028-2"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"CS101"},{"kind":"course","course_code":"EE101"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":11,"quote":"智能网联汽车基础，先修程序设计基础和电工电子技术，3 学分"}},
-    {"code":"VE211","name":"工程项目管理","credits":2,"module":"专业核心课","terms":["2027-2028-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":12,"quote":"工程项目管理，2 学分"}},
-    {"code":"VE212","name":"车辆系统仿真","credits":3,"module":"专业核心课","terms":["2027-2028-2"],"prerequisites":{"kind":"and","children":[{"kind":"course","course_code":"CS101"},{"kind":"course","course_code":"VE202"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":13,"quote":"车辆系统仿真，先修程序设计基础和汽车理论，3 学分"}},
-    {"code":"VE213","name":"汽车 CAD","credits":3,"module":"专业核心课","terms":["2026-2027-2"],"prerequisites":{"kind":"course","course_code":"ME101"},"source":{"doc_id":"vehicle-demo-plan-2025","page":8,"table_row":14,"quote":"汽车 CAD，先修工程制图，3 学分"}},
-    {"code":"EL201","name":"汽车轻量化设计","credits":3,"module":"专业选修课","terms":["2027-2028-1"],"prerequisites":{"kind":"course","course_code":"ME105"},"source":{"doc_id":"vehicle-demo-plan-2025","page":12,"table_row":2,"quote":"汽车轻量化设计，先修工程材料，3 学分"}},
-    {"code":"EL202","name":"汽车 NVH 基础","credits":3,"module":"专业选修课","terms":["2027-2028-1"],"prerequisites":{"kind":"course","course_code":"VE202"},"source":{"doc_id":"vehicle-demo-plan-2025","page":12,"table_row":3,"quote":"汽车 NVH 基础，先修汽车理论，3 学分"}},
-    {"code":"EL203","name":"汽车智能制造","credits":3,"module":"专业选修课","terms":["2027-2028-2"],"prerequisites":{"kind":"course","course_code":"VE204"},"source":{"doc_id":"vehicle-demo-plan-2025","page":12,"table_row":4,"quote":"汽车智能制造，先修汽车制造工艺，3 学分"}},
-    {"code":"EL204","name":"汽车数据分析","credits":3,"module":"专业选修课","terms":["2027-2028-2"],"prerequisites":{"kind":"course","course_code":"CS101"},"source":{"doc_id":"vehicle-demo-plan-2025","page":12,"table_row":5,"quote":"汽车数据分析，先修程序设计基础，3 学分"}},
-    {"code":"EL205","name":"汽车服务工程","credits":4,"module":"专业选修课","terms":["2027-2028-2"],"prerequisites":{"kind":"course","course_code":"VE201"},"source":{"doc_id":"vehicle-demo-plan-2025","page":12,"table_row":6,"quote":"汽车服务工程，先修汽车构造，4 学分"}},
-    {"code":"PR101","name":"工程训练","credits":2,"module":"实践教学环节","terms":["2025-2026-2"],"source":{"doc_id":"vehicle-demo-plan-2025","page":14,"table_row":2,"quote":"工程训练，2 学分"}},
-    {"code":"PR102","name":"汽车拆装实训","credits":3,"module":"实践教学环节","terms":["2026-2027-2"],"prerequisites":{"kind":"course","course_code":"VE201"},"source":{"doc_id":"vehicle-demo-plan-2025","page":14,"table_row":3,"quote":"汽车拆装实训，先修汽车构造，3 学分"}},
-    {"code":"PR103","name":"专业实习","credits":3,"module":"实践教学环节","terms":["2027-2028-2"],"prerequisites":{"kind":"credits","module":"专业核心课","min_credits":28},"source":{"doc_id":"vehicle-demo-plan-2025","page":14,"table_row":4,"quote":"专业实习，先修不少于 28 学分的专业核心课，3 学分"}},
-    {"code":"PR104","name":"毕业设计","credits":7,"module":"实践教学环节","terms":["2028-2029-2"],"prerequisites":{"kind":"and","children":[{"kind":"credits","module":"专业核心课","min_credits":40},{"kind":"course","course_code":"PR103"}]},"source":{"doc_id":"vehicle-demo-plan-2025","page":14,"table_row":5,"quote":"毕业设计，先修不少于 40 学分的专业核心课和专业实习，7 学分"}},
-    {"code":"PR105","name":"创新实践","credits":1,"module":"实践教学环节","terms":["2026-2027-1","2027-2028-1"],"source":{"doc_id":"vehicle-demo-plan-2025","page":14,"table_row":6,"quote":"创新实践，1 学分"}}
+    {
+      "code": "GE101",
+      "name": "高等数学 I",
+      "credits": 4,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-1"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 2,
+        "quote": "高等数学 I，4 学分"
+      }
+    },
+    {
+      "code": "GE102",
+      "name": "高等数学 II",
+      "credits": 4,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE101"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 3,
+        "quote": "高等数学 II，先修高等数学 I，4 学分"
+      }
+    },
+    {
+      "code": "GE103",
+      "name": "大学物理",
+      "credits": 4,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE101"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 4,
+        "quote": "大学物理，先修高等数学 I，4 学分"
+      }
+    },
+    {
+      "code": "GE104",
+      "name": "线性代数",
+      "credits": 2,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 5,
+        "quote": "线性代数，2 学分"
+      }
+    },
+    {
+      "code": "GE105",
+      "name": "概率论与数理统计",
+      "credits": 3,
+      "module": "通识教育",
+      "terms": [
+        "2026-2027-1"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE101"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 6,
+        "quote": "概率论与数理统计，先修高等数学 I，3 学分"
+      }
+    },
+    {
+      "code": "GE106",
+      "name": "大学英语",
+      "credits": 6,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-1",
+        "2025-2026-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 7,
+        "quote": "大学英语，6 学分"
+      }
+    },
+    {
+      "code": "GE107",
+      "name": "思想与道德",
+      "credits": 10,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-1",
+        "2025-2026-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 8,
+        "quote": "思想与道德课程组，10 学分"
+      }
+    },
+    {
+      "code": "GE108",
+      "name": "体育与健康",
+      "credits": 4,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-1",
+        "2025-2026-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 9,
+        "quote": "体育与健康，4 学分"
+      }
+    },
+    {
+      "code": "GE109",
+      "name": "计算机应用基础",
+      "credits": 2,
+      "module": "通识教育",
+      "terms": [
+        "2025-2026-1"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 10,
+        "quote": "计算机应用基础，2 学分"
+      }
+    },
+    {
+      "code": "GE110",
+      "name": "通识选修",
+      "credits": 9,
+      "module": "通识教育",
+      "terms": [
+        "2026-2027-1",
+        "2026-2027-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 3,
+        "table_row": 11,
+        "quote": "通识选修，9 学分"
+      }
+    },
+    {
+      "code": "ME101",
+      "name": "工程制图",
+      "credits": 3,
+      "module": "工程基础",
+      "terms": [
+        "2025-2026-1"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 2,
+        "quote": "工程制图，3 学分"
+      }
+    },
+    {
+      "code": "ME102",
+      "name": "工程力学",
+      "credits": 4,
+      "module": "工程基础",
+      "terms": [
+        "2025-2026-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE101"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 3,
+        "quote": "工程力学，先修高等数学 I，4 学分"
+      }
+    },
+    {
+      "code": "ME103",
+      "name": "机械原理",
+      "credits": 3,
+      "module": "工程基础",
+      "terms": [
+        "2026-2027-1"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "ME102"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 4,
+        "quote": "机械原理，先修工程力学，3 学分"
+      }
+    },
+    {
+      "code": "ME104",
+      "name": "机械设计",
+      "credits": 4,
+      "module": "工程基础",
+      "terms": [
+        "2026-2027-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "ME103"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 5,
+        "quote": "机械设计，先修机械原理，4 学分"
+      }
+    },
+    {
+      "code": "ME105",
+      "name": "工程材料",
+      "credits": 3,
+      "module": "工程基础",
+      "terms": [
+        "2026-2027-1"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 6,
+        "quote": "工程材料，3 学分"
+      }
+    },
+    {
+      "code": "EE101",
+      "name": "电工电子技术",
+      "credits": 4,
+      "module": "工程基础",
+      "terms": [
+        "2026-2027-1"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE103"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 7,
+        "quote": "电工电子技术，先修大学物理，4 学分"
+      }
+    },
+    {
+      "code": "CS101",
+      "name": "程序设计基础",
+      "credits": 3,
+      "module": "工程基础",
+      "terms": [
+        "2025-2026-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 8,
+        "quote": "程序设计基础，3 学分"
+      }
+    },
+    {
+      "code": "AE101",
+      "name": "汽车工程概论",
+      "credits": 3,
+      "module": "工程基础",
+      "terms": [
+        "2025-2026-1"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 9,
+        "quote": "汽车工程概论，3 学分"
+      }
+    },
+    {
+      "code": "MA101",
+      "name": "传感与测试技术",
+      "credits": 3,
+      "module": "工程基础",
+      "terms": [
+        "2026-2027-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE103"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 10,
+        "quote": "传感与测试技术，先修大学物理，3 学分"
+      }
+    },
+    {
+      "code": "CT101",
+      "name": "控制工程基础",
+      "credits": 4,
+      "module": "工程基础",
+      "terms": [
+        "2026-2027-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "GE102"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 5,
+        "table_row": 11,
+        "quote": "控制工程基础，先修高等数学 II，4 学分"
+      }
+    },
+    {
+      "code": "VE201",
+      "name": "汽车构造",
+      "credits": 4,
+      "module": "专业核心课",
+      "terms": [
+        "2026-2027-1"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "ME101"
+          },
+          {
+            "kind": "course",
+            "course_code": "AE101"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 2,
+        "quote": "汽车构造，先修工程制图和汽车工程概论，4 学分"
+      }
+    },
+    {
+      "code": "VE202",
+      "name": "汽车理论",
+      "credits": 4,
+      "module": "专业核心课",
+      "terms": [
+        "2026-2027-2"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "VE201"
+          },
+          {
+            "kind": "course",
+            "course_code": "ME102"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 3,
+        "quote": "汽车理论，先修汽车构造和工程力学，4 学分"
+      }
+    },
+    {
+      "code": "VE203",
+      "name": "汽车设计",
+      "credits": 4,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "ME104"
+          },
+          {
+            "kind": "course",
+            "course_code": "VE201"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 4,
+        "quote": "汽车设计，先修机械设计和汽车构造，4 学分"
+      }
+    },
+    {
+      "code": "VE204",
+      "name": "汽车制造工艺",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "ME104"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 5,
+        "quote": "汽车制造工艺，先修机械设计，3 学分"
+      }
+    },
+    {
+      "code": "VE205",
+      "name": "汽车电子控制",
+      "credits": 4,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "EE101"
+          },
+          {
+            "kind": "course",
+            "course_code": "CS101"
+          },
+          {
+            "kind": "course",
+            "course_code": "VE201"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 6,
+        "quote": "汽车电子控制，先修电工电子技术、程序设计基础和汽车构造，4 学分"
+      }
+    },
+    {
+      "code": "VE206",
+      "name": "新能源汽车原理",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "VE201"
+          },
+          {
+            "kind": "course",
+            "course_code": "EE101"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 7,
+        "quote": "新能源汽车原理，先修汽车构造和电工电子技术，3 学分"
+      }
+    },
+    {
+      "code": "VE207",
+      "name": "汽车试验学",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "MA101"
+          },
+          {
+            "kind": "course",
+            "course_code": "VE201"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 8,
+        "quote": "汽车试验学，先修传感与测试技术和汽车构造，3 学分"
+      }
+    },
+    {
+      "code": "VE208",
+      "name": "汽车动力学",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE202"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 9,
+        "quote": "汽车动力学，先修汽车理论，3 学分"
+      }
+    },
+    {
+      "code": "VE209",
+      "name": "汽车底盘设计",
+      "credits": 4,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE203"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 10,
+        "quote": "汽车底盘设计，先修汽车设计，4 学分"
+      }
+    },
+    {
+      "code": "VE210",
+      "name": "智能网联汽车基础",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "CS101"
+          },
+          {
+            "kind": "course",
+            "course_code": "EE101"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 11,
+        "quote": "智能网联汽车基础，先修程序设计基础和电工电子技术，3 学分"
+      }
+    },
+    {
+      "code": "VE211",
+      "name": "工程项目管理",
+      "credits": 2,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 12,
+        "quote": "工程项目管理，2 学分"
+      }
+    },
+    {
+      "code": "VE212",
+      "name": "车辆系统仿真",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "course",
+            "course_code": "CS101"
+          },
+          {
+            "kind": "course",
+            "course_code": "VE202"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 13,
+        "quote": "车辆系统仿真，先修程序设计基础和汽车理论，3 学分"
+      }
+    },
+    {
+      "code": "VE213",
+      "name": "汽车 CAD",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2026-2027-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "ME101"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 14,
+        "quote": "汽车 CAD，先修工程制图，3 学分"
+      }
+    },
+    {
+      "code": "VE214",
+      "name": "汽车车身设计",
+      "credits": 3,
+      "module": "专业核心课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE203"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 8,
+        "table_row": 15,
+        "quote": "汽车车身设计，先修汽车设计，3 学分"
+      }
+    },
+    {
+      "code": "EL201",
+      "name": "汽车轻量化设计",
+      "credits": 3,
+      "module": "专业选修课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "ME105"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 12,
+        "table_row": 2,
+        "quote": "汽车轻量化设计，先修工程材料，3 学分"
+      }
+    },
+    {
+      "code": "EL202",
+      "name": "汽车 NVH 基础",
+      "credits": 3,
+      "module": "专业选修课",
+      "terms": [
+        "2027-2028-1"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE202"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 12,
+        "table_row": 3,
+        "quote": "汽车 NVH 基础，先修汽车理论，3 学分"
+      }
+    },
+    {
+      "code": "EL203",
+      "name": "汽车智能制造",
+      "credits": 3,
+      "module": "专业选修课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE204"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 12,
+        "table_row": 4,
+        "quote": "汽车智能制造，先修汽车制造工艺，3 学分"
+      }
+    },
+    {
+      "code": "EL204",
+      "name": "汽车数据分析",
+      "credits": 3,
+      "module": "专业选修课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "CS101"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 12,
+        "table_row": 5,
+        "quote": "汽车数据分析，先修程序设计基础，3 学分"
+      }
+    },
+    {
+      "code": "EL205",
+      "name": "汽车服务工程",
+      "credits": 4,
+      "module": "专业选修课",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE201"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 12,
+        "table_row": 6,
+        "quote": "汽车服务工程，先修汽车构造，4 学分"
+      }
+    },
+    {
+      "code": "PR101",
+      "name": "工程训练",
+      "credits": 2,
+      "module": "实践教学环节",
+      "terms": [
+        "2025-2026-2"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 14,
+        "table_row": 2,
+        "quote": "工程训练，2 学分"
+      }
+    },
+    {
+      "code": "PR102",
+      "name": "汽车拆装实训",
+      "credits": 3,
+      "module": "实践教学环节",
+      "terms": [
+        "2026-2027-2"
+      ],
+      "prerequisites": {
+        "kind": "course",
+        "course_code": "VE201"
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 14,
+        "table_row": 3,
+        "quote": "汽车拆装实训，先修汽车构造，3 学分"
+      }
+    },
+    {
+      "code": "PR103",
+      "name": "专业实习",
+      "credits": 3,
+      "module": "实践教学环节",
+      "terms": [
+        "2027-2028-2"
+      ],
+      "prerequisites": {
+        "kind": "credits",
+        "module": "专业核心课",
+        "min_credits": 28
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 14,
+        "table_row": 4,
+        "quote": "专业实习，先修不少于 28 学分的专业核心课，3 学分"
+      }
+    },
+    {
+      "code": "PR104",
+      "name": "毕业设计",
+      "credits": 7,
+      "module": "实践教学环节",
+      "terms": [
+        "2028-2029-2"
+      ],
+      "prerequisites": {
+        "kind": "and",
+        "children": [
+          {
+            "kind": "credits",
+            "module": "专业核心课",
+            "min_credits": 40
+          },
+          {
+            "kind": "course",
+            "course_code": "PR103"
+          }
+        ]
+      },
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 14,
+        "table_row": 5,
+        "quote": "毕业设计，先修不少于 40 学分的专业核心课和专业实习，7 学分"
+      }
+    },
+    {
+      "code": "PR105",
+      "name": "创新实践",
+      "credits": 1,
+      "module": "实践教学环节",
+      "terms": [
+        "2026-2027-1",
+        "2027-2028-1"
+      ],
+      "source": {
+        "doc_id": "vehicle-demo-plan-2025",
+        "page": 14,
+        "table_row": 6,
+        "quote": "创新实践，1 学分"
+      }
+    }
   ]
 }

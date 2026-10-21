@@ -39,8 +39,10 @@ sys.path.insert(0, str(ROOT / "deploy"))
 
 OUT_FILE = Path(__file__).parent / "course-audit.chatflow.yml"
 
-#: 先修类问题的关键词（if-else 的 or 条件），命中任一即走 /prereq 分支
-PREREQ_KEYWORDS = ["先修", "前置", "能不能选", "可以选", "能否选"]
+#: 先修类问题的关键词（if-else 的 or 条件），命中任一即走 /prereq 分支。
+#: "能选" 一个词覆盖 能不能选 / 能否选 / 能选吗 / 还能选修吗 等常见问法；
+#: 早期只写了「能不能选」「能否选」，学生问「XX 能选吗」会掉进学分核算分支。
+PREREQ_KEYWORDS = ["先修", "前置", "能选", "可以选", "可不可以选", "选课条件"]
 #: 条款类问题的关键词（转专业、认定、免修等），走"检索条款"分支
 CLAUSE_KEYWORDS = ["转专业", "学分认定", "免修", "重修", "替代", "抵", "条例", "规定", "政策"]
 #: 核算类问题的关键词。v2 把它从默认分支变成显式分支，避免普通条款问题
@@ -225,11 +227,13 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
                         "options": [],
                     },
                     {
+                        # 可选：填了才把「已修课程」存进档案；不填就是一次性核算。
+                        # 3–128 位字母/数字/_ . : -，服务端用同一正则校验。
                         "variable": "profile_id",
-                        "label": "档案标识",
-                        "description": "首次自定一个固定标识（如学号或匿名昵称）；后续使用同一标识即可读取同一份课程档案。",
+                        "label": "档案标识（可选）",
+                        "description": "想跨会话记住已修课程时，自定一个固定标识（如学号或匿名昵称）；不填则只做一次性核算。",
                         "type": "text-input",
-                        "required": True,
+                        "required": False,
                         "max_length": 128,
                         "options": [],
                     },

@@ -107,8 +107,10 @@ def retrieval(
     records = [
         Record(
             content=hit.chunk.content,
-            # 保留 6 位小数，便于评测脚本复现同一排序
-            score=round(float(hit.score), 6),
+            # 保留 6 位小数，便于评测脚本复现同一排序；
+            # 对外截到 1.0：分数会作为「匹配度」展示给用户，超过 1 的相似度不合理
+            # （内部加权仍用未截断的分数排序，故不影响名次）
+            score=round(min(1.0, float(hit.score)), 6),
             title=hit.chunk.title,
             metadata=hit.chunk.metadata or {},
         )

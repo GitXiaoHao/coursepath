@@ -127,3 +127,15 @@ class TestTextFormat:
         resp = client.post("/audit", json={"completed_text": "GE101", "format": "text"})
         assert resp.status_code == 401
         assert resp.json()["error_code"] == 1001
+
+def test_resolve_in_text_prefers_the_course_asked_about(plan) -> None:
+    """问句里点了两门课时，取**先出现**的那门——前面是被问的，后面是"我修过"的。"""
+    course = plan.resolve_in_text("汽车电子控制能选吗？我修过电工电子技术、程序设计基础")
+    assert course is not None
+    assert course.code == "VE205"
+
+
+def test_resolve_in_text_prefers_longer_name_at_same_position(plan) -> None:
+    course = plan.resolve_in_text("汽车车身设计的先修要求")
+    assert course is not None
+    assert course.code == "VE214"

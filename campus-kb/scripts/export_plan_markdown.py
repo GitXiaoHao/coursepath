@@ -21,6 +21,26 @@ from core.corpus import load_plan
 from core.parser import build_plan, load_tables, parse_prereq_text
 from core.schema import CreditPlan, PrereqExpr
 
+#: 条款表（教务口径）。合成内容，用于演示"条款类问题"分支，不涉及任何真实院校。
+CLAUSES = [
+    (
+        "转专业学分认定",
+        "从其他专业转入车辆工程",
+        "原专业已修且成绩合格的同名课程可直接认定；名称不同但内容相近的课程须提交课程大纲"
+        "经认定后方可替代，认定结果计入专业选修课学分，不重复计入专业核心课。",
+    ),
+    (
+        "跨专业学分上限",
+        "以外专业课程申请替代",
+        "替代课程合计不超过专业选修课要求的 16 学分，超出部分不计入毕业学分。",
+    ),
+    (
+        "重修与免修",
+        "课程重修或免修",
+        "重修以最高一次成绩计入；免修须通过免修考核，考核合格后按培养方案登记的学分认定。",
+    ),
+]
+
 MODULE_NOTES = {
     "通识教育": "含思想政治、外语、体育与通识选修",
     "工程基础": "本专业需具备的工程学科基础",
@@ -87,6 +107,16 @@ def render(plan: CreditPlan, *, title: str, note: str) -> str:
         if course.prerequisites is None:
             continue
         lines.append(f"| {course.code} | {course.name} | {prereq_text(course.prerequisites, plan)} |")
+    lines.append("")
+
+    lines += [
+        "## 四、学分认定与条款",
+        "",
+        "| 条款主题 | 适用情形 | 认定规则 |",
+        "| --- | --- | --- |",
+    ]
+    for topic, scene, rule in CLAUSES:
+        lines.append(f"| {topic} | {scene} | {rule} |")
     lines.append("")
     return "\n".join(lines)
 

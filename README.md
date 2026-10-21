@@ -59,7 +59,7 @@
 | 0 赛题解构 | ✅ 完成（`docs/00-约束清单.md` + 仓库骨架） |
 | 1 路径决策 | ✅ 结论已定（C 为主 / A 为辅，见 `docs/01-参赛计划.md` §1）；⏳ 市场取证待补 |
 | 2 技术方案 | ✅ 文档完成 + **环境 spike 通过**：Dify 1.17.1 全栈本机跑通，SSRF → 外部知识库链路实测 200（`docs/04`、`docs/05`） |
-| 3 开发 | ✅ `campus-kb` 闭环完成（解析→检索→核算→评测），**149 项测试全绿**；Chatflow 三路分流已导入并冒烟通过（检索→条款整理→分流→核算→回答）；`.difypkg` 工具插件已装进 Dify 并端到端跑通（`docs/07-插件开发与验证.md`） |
+| 3 开发 | ✅ `campus-kb` 闭环完成（解析→检索→核算→评测），**162 项测试全绿**（演示数据为合成的车辆工程方案：44 门课 / 5 模块 / 160 学分）；Chatflow 三路分流已导入并冒烟通过（检索→条款整理→分流→核算→回答）；`.difypkg` 工具插件已装进 Dify 并端到端跑通（`docs/07-插件开发与验证.md`） |
 | 4–5 材料与预检 | ✅ 技术报告 PDF（13 页 / 1.34 MB）、资源清单附件（6 页）、演示视频（3:47 / 9.7 MB）已产出；预检 A1–A8、B1–B8、C1–C7 全绿（`docs/06-提交预检清单.md`）；`deploy/make_submission.py` 一键生成 `提交材料/`；⏳ 待大赛系统正式提交 |
 
 ## 端到端现状（本机实测）
@@ -71,12 +71,18 @@
                     └─ 学分类 ──► HTTP /audit  ──► 分模块缺口核算 + 条款清单
 ```
 
-示例回答（`CS101,CS201` 已修，「编译原理的先修要求是什么？」）：
+示例回答（`EE101,CS101` 已修，「汽车电子控制能选吗？我修过电工电子技术、程序设计基础」）：
 
-> ### 先修检查 · 编译原理（CS305）
+> ### 先修检查 · 汽车电子控制（VE205）
 > - 结论：**不满足**，缺 1 门直接先修
-> - 直接先修（必须先通过）：计算机组成原理（CS202）：尚未通过
-> - **相关条款（检索命中，可逐条核对）** 1. 培养方案 2026 · 课程先修要求表（第 14 页 第 3 行，匹配度 1.00）…
+> - 直接先修（必须先通过）：汽车构造（VE201）：尚未通过
+> - **相关条款（检索命中，可逐条核对）** 1. 培养方案 · 课程先修要求表（第 3 页 第 14 行，匹配度 1.00）…
+
+问「我还差多少学分毕业」（已修 `EE101,CS101,VE201`）返回：
+
+> ### 学分核算 · 车辆工程（示范培养方案）
+> - 总学分 160，已认定 11，**还差 149 学分**
+> - 模块缺口：通识教育 48 / 工程基础 27 / 专业核心课 42 / 专业选修课 16 / 实践教学环节 16
 
 ## 快速开始
 
@@ -92,7 +98,7 @@ $py = "$PWD\campus-kb\.venv\Scripts\python.exe"   # 后面都用它
 $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONUTF8 = "1"   # 否则中文输出乱码
 
 Push-Location campus-kb
-& $py -m pytest -q                 # 149 passed（无网络、无 Dify、无 API Key）
+& $py -m pytest -q                 # 162 passed（无网络、无 Dify、无 API Key）
 & $py -m eval.run_eval             # 评测带门禁：Recall@1<0.8 或 exact_match<1.0 即非零退出
 Pop-Location
 ```
@@ -106,7 +112,7 @@ $env:KB_API_KEY = "demo-key"
 
 # 另开终端，先重复 $py 与环境变量
 curl.exe -s http://127.0.0.1:8088/health
-& $py -c "import json,urllib.request as u; req=u.Request('http://127.0.0.1:8088/retrieval',data=json.dumps({'knowledge_id':'campus-kb','query':'编译原理的先修要求','retrieval_setting':{'top_k':3,'score_threshold':0.0}}).encode(),headers={'Authorization':'Bearer demo-key','Content-Type':'application/json'}); d=json.load(u.urlopen(req)); print(len(d['records']), d['records'][0]['metadata']['page'])"
+& $py -c "import json,urllib.request as u; req=u.Request('http://127.0.0.1:8088/retrieval',data=json.dumps({'knowledge_id':'campus-kb','query':'汽车设计需要先修哪些课程','retrieval_setting':{'top_k':3,'score_threshold':0.0}}).encode(),headers={'Authorization':'Bearer demo-key','Content-Type':'application/json'}); d=json.load(u.urlopen(req)); print(len(d['records']), d['records'][0]['metadata']['page'])"
 ```
 
 > 故意的：PowerShell 5.1 会把原生 `curl.exe` 参数里的双引号吃掉，`-d '{...}'` 会变成非法 JSON；这里用 Python 发请求最稳（bash 下可直接用 `curl -d`）。
@@ -153,11 +159,11 @@ $env:DIFY_ADMIN_PASSWORD = "<刚才设置的密码>"
 
 ### D. 只把插件分发给别人（不跑本项目的服务）
 
-把 `dify-plugin/dist/course_audit-0.1.1.difypkg`（24.6 KB，自带核算内核、无网络调用）发给对方，对方：
+把 `dify-plugin/dist/course_audit-0.2.1.difypkg`（24.6 KB，自带核算内核、无网络调用）发给对方，对方：
 
 1. Dify 左侧 **集成** → 左上 **安装** → 下拉选 **本地集成包** → 选 `.difypkg`；
 2. 集成 → **工具** 里出现「课径核算」即装好；
-3. 工作室新建 Chatflow → 加 **工具** 节点 → 选 `credit_audit` / `prereq_check` → 参数 `completed=CS101,CS201`（`plan_json` 留空用内置示例方案）。
+3. 工作室新建 Chatflow → 加 **工具** 节点 → 选 `credit_audit` / `prereq_check` → 参数 `completed=EE101,CS101`（`plan_json` 留空用内置示例方案）。
 
 自建包没有官方签名，若报签名校验失败，需在**部署侧** `.env` 设 `FORCE_VERIFYING_SIGNATURE=false` 并重启 `api worker plugin_daemon`（不改源码）。
 

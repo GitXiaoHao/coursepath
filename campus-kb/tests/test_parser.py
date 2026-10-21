@@ -49,17 +49,23 @@ def signature(expr: PrereqExpr | None):
 # --------------------------------------------------------------------------- 表格切分
 def test_split_markdown_tables() -> None:
     tables = split_markdown_tables(MD.read_text(encoding="utf-8"))
-    assert [table.title for table in tables] == ["一、学分结构与毕业要求", "二、课程设置表", "三、先修要求表"]
-    assert [table.page for table in tables] == [1, 2, 3]
+    assert [table.title for table in tables] == [
+        "一、学分结构与毕业要求",
+        "二、课程设置表",
+        "三、先修要求表",
+        "四、学分认定与条款",
+    ]
+    assert [table.page for table in tables] == [1, 2, 3, 4]
     assert tables[0].headers == ("模块", "要求学分", "说明")
     assert len(tables[0].rows) == 6  # 5 个模块 + 合计
     assert len(tables[1].rows) == 44
     assert len(tables[2].rows) == 30
+    assert len(tables[3].rows) == 3
 
 
 def test_classify_tables() -> None:
     tables = split_markdown_tables(MD.read_text(encoding="utf-8"))
-    assert [classify(table) for table in tables] == ["modules", "courses", "prereq"]
+    assert [classify(table) for table in tables] == ["modules", "courses", "prereq", "clause"]
 
 
 def test_separator_rows_are_dropped() -> None:
@@ -253,7 +259,7 @@ def test_synthetic_course_code_when_missing() -> None:
 def test_build_chunks(built) -> None:
     tables = load_tables(MD)
     chunks = build_chunks(tables, doc_id="vehicle-demo-plan-2025")
-    assert len(chunks) == 6 + 44 + 30  # 学分结构表 6 行（含合计）+ 课程 44 + 先修 30
+    assert len(chunks) == 6 + 44 + 30 + 3  # 学分结构 6（含合计）+ 课程 44 + 先修 30 + 条款 3
     first = chunks[0]
     assert first.metadata["page"] == 1
     assert first.metadata["table_row"] == 1
@@ -264,6 +270,10 @@ def test_build_chunks(built) -> None:
     assert course_chunk.metadata["doc_type"] == "培养方案"
     assert "汽车电子控制" in course_chunk.content
     assert all(isinstance(chunk.metadata.get("page"), int) for chunk in chunks)
+
+    clause_chunk = next(chunk for chunk in chunks if chunk.metadata.get("table_kind") == "clause")
+    assert clause_chunk.metadata["page"] == 4
+    assert "转专业" in chunks[-3].content
 
 
 def test_metadata_survives_json_roundtrip(built) -> None:
