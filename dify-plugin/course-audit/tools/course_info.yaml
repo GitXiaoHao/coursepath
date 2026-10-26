@@ -1,0 +1,37 @@
+identity:
+  name: "course_info"
+  author: "coursepath"
+  label:
+    en_US: "Course information"
+    zh_Hans: "课程信息查询"
+description:
+  human:
+    en_US: "Look up a course's module, credits, suggested term, and source in the study plan."
+    zh_Hans: "查询课程所属模块、学分、建议开课学期及培养方案出处。"
+  llm: "Given a course code or full course name, return its module, credits, suggested term, and source from the study plan. Do not use this tool for graduation credit totals."
+parameters:
+  - name: course
+    type: string
+    required: true
+    label:
+      en_US: "Course code or name"
+      zh_Hans: "课程代码或名称"
+    human_description:
+      en_US: "For example: CS101 or Introduction to Programming."
+      zh_Hans: "例如：CS101 或 程序设计基础。"
+    llm_description: "The course code or the full course name to look up."
+    form: llm
+  - name: plan_json
+    type: string
+    required: false
+    label:
+      en_US: "Study plan JSON (optional)"
+      zh_Hans: "培养方案 JSON（可选）"
+    human_description:
+      en_US: "Leave empty to use the bundled demo plan."
+      zh_Hans: "留空则使用内置示例方案。"
+    llm_description: "Study plan JSON. Omit to use the bundled demo plan."
+    form: llm
+extra:
+  python:
+    source: tools/course_info.py

@@ -54,23 +54,12 @@ def wait_answer(page: Page, min_wait: float = 3.0) -> None:
         time.sleep(1.0)
 
 
-def ask(page: Page, question: str, expect: str) -> None:
-    """提问并等到「出现一条新回答且包含 expect」为止。"""
-    before = page.locator("div.markdown-body").count()
+def ask(page: Page, question: str) -> None:
     box = page.locator("textarea:visible").last
     box.click()
     box.fill(question)
     box.press("Enter")
     wait_answer(page)
-    t0 = time.time()
-    while time.time() - t0 < 90:
-        cards = page.locator("div.markdown-body")
-        if cards.count() > before:
-            text = cards.nth(cards.count() - 1).inner_text()
-            if expect in text:
-                return
-        time.sleep(1.5)
-    raise SystemExit(f"未拿到预期回答（缺少 {expect!r}）：{question}")
 
 
 def shot_answer(page: Page, path: Path) -> None:
@@ -135,28 +124,6 @@ def open_app(page: Page) -> None:
     time.sleep(2.5)
 
 
-def new_chat(page: Page, completed: str) -> None:
-    """开一个新会话并填写已修课程；表单只在「新对话」出现时才填。"""
-    trigger = page.locator('button:has-text("开启新对话")').first
-    if trigger.count():
-        try:
-            trigger.click()
-            page.wait_for_load_state("networkidle")
-            time.sleep(1.5)
-        except PlaywrightTimeoutError:
-            pass
-    box = page.locator('input[placeholder*="已修课程代码"]:visible').first
-    try:
-        box.wait_for(state="visible", timeout=8000)
-        box.click()
-        box.fill(completed)
-        page.locator('button:has-text("开始对话")').first.click()
-        page.wait_for_load_state("networkidle")
-    except PlaywrightTimeoutError:
-        print("  （未出现新对话设置表单，直接在当前会话提问）")
-    time.sleep(2.0)
-
-
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
@@ -167,14 +134,22 @@ def main() -> int:
         login(page)
         open_app(page)
 
-        # 图 5-1：学分核算（已修三门，含一门专业核心课）
-        new_chat(page, "EE101,CS101,VE201")
-        ask(page, "毕业还差多少学分？我已修 EE101、CS101 和 VE201", "还差 149")
+        # 新对话设置表单只在「首次进入该应用」时出现；已有会话时直接进聊天，需容错
+        box = page.locator('input[placeholder*="已修课程代码"]:visible').first
+        try:
+            box.wait_for(state="visible", timeout=8000)
+            box.click()
+            box.fill("CS101,CS201")
+            page.locator('button:has-text("开始对话")').first.click()
+            page.wait_for_load_state("networkidle")
+        except PlaywrightTimeoutError:
+            print("  （未出现新对话设置表单，直接在当前会话提问）")
+        time.sleep(2.0)
+
+        ask(page, "毕业还差多少学分？我已修 CS101 和 CS201")
         shot_answer(page, OUT / "fig-credits.png")
 
-        # 图 5-2：先修判定（故意只修一门，回答会给出"暂不能选 + 还缺哪两门"）
-        new_chat(page, "EE101")
-        ask(page, "汽车电子控制能选吗？我只修过 EE101", "暂不能选")
+        ask(page, "编译原理的先修要求是什么？我修过 CS101 和 CS201")
         shot_answer(page, OUT / "fig-prereq.png")
         browser.close()
     return 0

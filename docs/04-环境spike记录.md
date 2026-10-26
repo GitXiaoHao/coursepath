@@ -59,9 +59,9 @@ deploy/
 [1/4] 登录成功 admin@campus-kb.local（csrf 已获取）
 [2/4] 登记外部知识库 API a0fc1add-... -> http://campus-kb:8080
 [3/4] 绑定外部知识库 85cd6c41-...
-[4/4] 命中测试通过，返回 3 条（query=汽车电子控制能选吗）
+[4/4] 命中测试通过，返回 3 条（query=编译原理的先修要求是什么）
       1. score=1.0000 培养方案 2026 · 课程先修要求表 | doc=plan-2026 p14
-      2. score=0.9375 三、先修要求表 | doc=plan-ve
+      2. score=0.9375 课程大纲 · 编译原理 | doc=syllabus-compiler p1
       3. score=0.4513 培养方案 2026 · 专业核心课模块 | doc=plan-2026 p12
 SPIKE PASS：Dify -> SSRF Proxy -> campus-kb 链路打通
 ```

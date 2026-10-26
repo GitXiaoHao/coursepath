@@ -1,8 +1,8 @@
 # Course path audit (课径学业助手)
 
 A Dify **tool plugin** that turns a university study plan into an installable academic
-assistant: it computes module credit gaps, checks prerequisites, and suggests courses
-whose registered prerequisites are currently satisfied.
+assistant: it computes module credit gaps, checks prerequisites, suggests courses
+whose registered prerequisites are currently satisfied, and looks up structured course information.
 
 The point of the plugin is that **all arithmetic is deterministic Python**, not a
 language model. Every answer carries a rule number (`R1`–`R5`) so a student or an
@@ -15,8 +15,9 @@ advisor can check the conclusion line by line.
 | `credit_audit` | Remaining credits per module + total | `completed` (required), `plan_json` (optional) |
 | `prereq_check` | Can this course be taken now; missing direct/upstream prerequisites | `course` (required), `completed`, `plan_json` |
 | `study_plan` | Courses currently worth considering, ranked by module gap | `completed`, `limit`, `plan_json` |
+| `course_info` | Course module, credits, suggested term and source | `course`, `plan_json` |
 
-`completed` accepts `EE101,CS101`, `EE101:4、CS101`, `EE101(4)` and similar forms
+`completed` accepts `CS101,CS201`, `CS101:3、CS201`, `CS101(3)` and similar forms
 (comma, semicolon, Chinese comma, ideographic comma).
 
 `plan_json` is optional. When omitted the plugin uses a bundled synthetic demo plan
@@ -40,8 +41,8 @@ advisor can check the conclusion line by line.
       "module": "Core",
       "terms": ["5"],
       "prerequisites": { "kind": "and", "children": [
-        { "kind": "course", "course_code": "CS101" },
-        { "module": "Core", "kind": "credits", "min_credits": 40 }
+        { "kind": "course", "course_code": "CS201" },
+        { "kind": "course", "course_code": "CS202" }
       ]}
     }
   ]
@@ -50,7 +51,7 @@ advisor can check the conclusion line by line.
 
 Prerequisite expressions support three node kinds:
 
-- `{"kind": "course", "course_code": "CS101"}` — a specific course must be passed
+- `{"kind": "course", "course_code": "CS201"}` — a specific course must be passed
 - `{"kind": "and"|"or", "children": [...]}` — boolean combination
 - `{"kind": "credits", "module": "Core", "min_credits": 40}` — enough credits in a module
 
@@ -115,12 +116,12 @@ the downloadable plugin.
    The installer reuses or registers `课径 · 培养方案知识库`, then adds retrieved
    page/table-row evidence below each answer. Without this flag the same workflow
    remains a fully portable, offline plugin application; it simply has no RAG citations.
-3. In the new app, fill in **Completed courses** (for example `EE101,CS101`) and ask:
-   “还差多少学分？”, “汽车电子控制能选吗？”, or “推荐我下一步修什么？”.
+3. In the new app, fill in **Completed courses** (for example `CS101,CS201`) and ask:
+   “还差多少学分？”, “CS305 能选吗？”, or “推荐我下一步修什么？”.
 
    The template also extracts course codes when the user explicitly writes a completion
-   claim such as “我已修 EE101、CS101”. It merges those codes with the form field, but
-   does not infer codes from course names or treat the target of “汽车电子控制能选吗？” as a
+   claim such as “我已修 CS101、CS201”. It merges those codes with the form field, but
+   does not infer codes from course names or treat the target of “CS305 能选吗？” as a
    completed course.
 
 If you are building your own workflow, pick **课径学业助手** in a Tool node and choose

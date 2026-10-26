@@ -112,7 +112,7 @@ def main() -> int:
 
         # --- 新对话：填入已修课程
         box = page.locator('input[placeholder*="已修课程代码"]:visible').first
-        slow_type(page, box, "EE101,CS101", per_char=0.07)
+        slow_type(page, box, "CS101,CS201", per_char=0.07)
         time.sleep(0.6)
         rec.mark("new-chat-start")
         page.locator('button:has-text("开始对话")').first.click()
@@ -121,7 +121,7 @@ def main() -> int:
         rec.mark("chat-ready")
 
         # --- 问答 1：学分
-        q1 = "毕业还差多少学分？我已修 EE101 和 CS101"
+        q1 = "毕业还差多少学分？我已修 CS101 和 CS201"
         box = page.locator("textarea:visible").last
         slow_type(page, box, q1, per_char=0.03)
         time.sleep(0.6)
@@ -131,7 +131,7 @@ def main() -> int:
         rec.mark("q1-done")
 
         # --- 问答 2：先修
-        q2 = "汽车电子控制能选吗？"
+        q2 = "编译原理的先修要求是什么？我修过 CS101 和 CS201"
         box = page.locator("textarea:visible").last
         slow_type(page, box, q2, per_char=0.03)
         time.sleep(0.6)

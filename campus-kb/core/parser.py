@@ -27,9 +27,6 @@ CREDIT_ALIASES = ("学分", "学分要求", "要求学分")
 MODULE_ALIASES = ("模块", "课程模块", "模块名称", "课程类别", "类别", "课程性质")
 TERM_ALIASES = ("开课学期", "学期", "开课时间", "建议修读学期")
 PREREQ_ALIASES = ("先修要求", "先修课程", "先修", "预修课程", "预修要求", "选课条件")
-#: 条款表头（"转专业怎么认定"这类问题的语料来源）
-CLAUSE_ALIASES = ("条款主题", "认定规则", "适用情形", "条款", "规定", "说明")
-
 TOTAL_KEYWORDS = ("合计", "总计", "毕业总学分", "总学分")
 
 NO_PREREQ = {"", "无", "无要求", "暂无", "—", "-", "/", "／", "无先修要求", "无先修课程"}
@@ -182,8 +179,6 @@ def classify(table: Table) -> str:
         return "courses"
     if has_module and has_credit:
         return "modules"
-    if table.column(CLAUSE_ALIASES) is not None:
-        return "clause"
     return "unknown"
 
 

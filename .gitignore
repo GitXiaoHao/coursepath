@@ -11,32 +11,21 @@ venv/
 **/data/real/
 **/data/index/
 
-# 密钥与部署产物
+# 密钥与本地部署产物
 .env
 deploy/dify/
 deploy/**/.env
 .tools/
-*.difypkg
-# 例外：插件交付物本身要能被第三方直接下载（24 KB，非构建缓存）
-!dify-plugin/dist/course_audit-0.2.1.difypkg
 *.faiss
-*.zip
 
 # 本地学生课程档案；发布插件和代码时绝不携带个人修读记录
 **/data/profiles/*.sqlite3
 **/data/profiles/*.sqlite3-*
 
-# 本地探索记录与临时文件
+# 本地探索记录（含临时凭据，不入库）
 .explore/
-tmp/
-*.log
+
+# 构建中间产物
 video/.build/
 report/.build/
-
-# 提交材料打包产物（含视频，不入库）
-提交材料/
-
-# 本地构建产物与一次性输出
-.archify/
-deliverables/
 test-result.txt

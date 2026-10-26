@@ -5,7 +5,7 @@
 #
 # 作用：把自研的 campus-kb 接入 Dify 的 ssrf_proxy_network，使
 #   - Dify 的外部知识库可访问 http://campus-kb:8080/retrieval
-#   - 工作流 HTTP 节点可访问 http://campus-kb:8080/audit、/prereq
+#   - 工作流 HTTP 节点可访问 http://campus-kb:8080/audit、/prereq、/course-info
 # 同时 ssh 型内网访问需在 .env 设置 SSRF_PROXY_ALLOW_PRIVATE_DOMAINS=campus-kb
 # （ssrf_proxy 官方 entrypoint 支持该变量，会生成放行规则）。
 

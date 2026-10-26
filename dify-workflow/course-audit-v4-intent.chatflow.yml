@@ -3,7 +3,7 @@ app:
   icon: 📘
   icon_background: '#E0F2FE'
   mode: advanced-chat
-  name: 课径 · 可核算的培养方案问答 v8（精简回复版）
+  name: 课径 · 可核算的培养方案问答 v9（课程信息与修读规划）
   use_icon_as_answer_icon: false
 dependencies: []
 kind: app
@@ -198,6 +198,24 @@ workflow:
         isInIteration: false
         sourceType: if-else
         targetType: http-request
+      id: branch-course_info-course_info
+      source: branch
+      sourceHandle: course_info
+      target: course_info
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: answer
+      id: course_info-source-answer_course_info
+      source: course_info
+      sourceHandle: source
+      target: answer_course_info
+      targetHandle: target
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
       id: branch-profile_manage-profile_manage
       source: branch
       sourceHandle: profile_manage
@@ -364,6 +382,36 @@ workflow:
             - query
             comparison_operator: contains
             value: 推荐课程
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 下学期
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 下个学期
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 选什么课
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 选哪些课
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 怎么选课
+          - variable_selector:
+            - intent_parse
+            - intent
+            comparison_operator: contains
+            value: study_plan
         - case_id: profile
           logical_operator: or
           conditions:
@@ -393,6 +441,49 @@ workflow:
             - intent
             comparison_operator: contains
             value: audit
+        - case_id: course_info
+          logical_operator: or
+          conditions:
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 算哪个模块
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 属于什么模块
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 所属模块
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 哪个模块
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 几学分
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 多少学分
+          - variable_selector:
+            - sys
+            - query
+            comparison_operator: contains
+            value: 学分是多少
+          - variable_selector:
+            - intent_parse
+            - intent
+            comparison_operator: contains
+            value: course_info
       height: 150
       id: branch
       position:
@@ -714,8 +805,9 @@ workflow:
             temperature: 0
         prompt_template:
         - role: system
-          text: 你是严格的工作流路由器。只输出 JSON，不要 Markdown 或解释。intent 只能是 audit、prereq、clause：询问毕业剩余/已修课程/课程修完后剩余学分为
-            audit；询问课程先修或能否选课为 prereq；其余培养方案条款为 clause。completed_courses 只能包含用户明确说已修完、已通过、已修的课程代码；不要猜测课程名称对应的代码。输出格式：{\"intent\":\"audit\",\"completed_courses\":[\"GE101\"]}
+          text: 你是严格的工作流路由器。只输出 JSON，不要 Markdown 或解释。intent 只能是 audit、prereq、study_plan、course_info、clause：询问毕业剩余/已修课程/课程修完后剩余学分为
+            audit；询问课程先修或能否选课为 prereq；询问下学期选什么课、选课建议或修读规划为 study_plan；询问一门课属于哪个模块、多少学分或建议学期为
+            course_info；其余培养方案条款为 clause。completed_courses 只能包含用户明确说已修完、已通过、已修的课程代码；不要猜测课程名称对应的代码。输出格式：{\"intent\":\"audit\",\"completed_courses\":[\"GE101\"]}
         - role: user
           text: 用户问题：{{#sys.query#}}\n表单已修课程：{{#start.completed#}}
         prompt_config:
@@ -749,17 +841,23 @@ workflow:
         code_language: python3
         code: "\nimport json\nimport re\n\nAUDIT_WORDS = (\"毕业\", \"还差\", \"缺多少\"\
           , \"学分缺口\", \"已修学分\", \"总学分\", \"完成学分\", \"修完\", \"已修\", \"学过\", \"通过\"\
-          )\nPREREQ_WORDS = (\"先修\", \"前置\", \"能不能选\", \"可以选\", \"能否选\")\n\ndef main(model_text:\
-          \ str, query: str, form_completed: str) -> dict:\n    raw = model_text or\
-          \ \"\"\n    # 支持模型偶尔包裹在 Markdown code fence 里的 JSON。\n    match = re.search(r\"\
-          \\{.*?\\}\", raw, re.S)\n    data = {}\n    if match:\n        try:\n  \
-          \          data = json.loads(match.group(0))\n        except (TypeError,\
-          \ ValueError):\n            data = {}\n\n    intent = str(data.get(\"intent\"\
-          ) or \"\").lower()\n    text = query or \"\"\n    if intent not in (\"audit\"\
-          , \"prereq\", \"clause\"):\n        if any(word in text for word in PREREQ_WORDS):\n\
-          \            intent = \"prereq\"\n        elif any(word in text for word\
-          \ in AUDIT_WORDS):\n            intent = \"audit\"\n        else:\n    \
-          \        intent = \"clause\"\n\n    # 只接受规范课程代码；表单输入优先保留，模型抽取的代码补充到其后。\n\
+          )\nPREREQ_WORDS = (\"先修\", \"前置\", \"能不能选\", \"可以选\", \"能否选\")\nSTUDY_PLAN_WORDS\
+          \ = (\"修读规划\", \"选课建议\", \"推荐课程\", \"下学期\", \"下个学期\", \"选什么课\", \"选哪些课\"\
+          , \"怎么选课\")\nCOURSE_INFO_WORDS = (\"算哪个模块\", \"属于什么模块\", \"所属模块\", \"哪个模块\"\
+          , \"几学分\", \"多少学分\", \"学分是多少\")\n\ndef main(model_text: str, query: str,\
+          \ form_completed: str) -> dict:\n    raw = model_text or \"\"\n    # 支持模型偶尔包裹在\
+          \ Markdown code fence 里的 JSON。\n    match = re.search(r\"\\{.*?\\}\", raw,\
+          \ re.S)\n    data = {}\n    if match:\n        try:\n            data =\
+          \ json.loads(match.group(0))\n        except (TypeError, ValueError):\n\
+          \            data = {}\n\n    intent = str(data.get(\"intent\") or \"\"\
+          ).lower()\n    text = query or \"\"\n    if intent not in (\"audit\", \"\
+          prereq\", \"clause\", \"study_plan\", \"course_info\"):\n        if any(word\
+          \ in text for word in STUDY_PLAN_WORDS):\n            intent = \"study_plan\"\
+          \n        elif any(word in text for word in COURSE_INFO_WORDS):\n      \
+          \      intent = \"course_info\"\n        elif any(word in text for word\
+          \ in PREREQ_WORDS):\n            intent = \"prereq\"\n        elif any(word\
+          \ in text for word in AUDIT_WORDS):\n            intent = \"audit\"\n  \
+          \      else:\n            intent = \"clause\"\n\n    # 只接受规范课程代码；表单输入优先保留，模型抽取的代码补充到其后。\n\
           \    found = re.findall(r\"\\b[A-Za-z]{2,6}\\d{2,4}\\b\", form_completed\
           \ or \"\")\n    model_courses = data.get(\"completed_courses\") or []\n\
           \    if isinstance(model_courses, str):\n        model_courses = re.findall(r\"\
@@ -922,6 +1020,69 @@ workflow:
       positionAbsolute:
         x: 1780
         y: 700
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: http-request
+        title: 查询课程信息
+        method: post
+        url: http://campus-kb:8080/course-info
+        authorization:
+          type: api-key
+          config:
+            type: bearer
+            api_key: ${CAMPUS_KB_API_KEY}
+            header: ''
+        headers: 'Content-Type: application/json'
+        params: ''
+        body:
+          type: json
+          data:
+          - key: ''
+            type: text
+            value: '{"query": "{{#sys.query#}}", "format": "text"}'
+            file: []
+        timeout:
+          connect: 10
+          read: 60
+          write: 30
+        ssl_verify: true
+        retry_config:
+          max_retries: 2
+          retry_interval: 500
+          retry_enabled: true
+      height: 90
+      id: course_info
+      position:
+        x: 1420
+        y: 1100
+      positionAbsolute:
+        x: 1420
+        y: 1100
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 300
+    - data:
+        desc: ''
+        selected: false
+        type: answer
+        title: 回答（课程信息）
+        answer: '{{#course_info.body#}}'
+      height: 140
+      id: answer_course_info
+      position:
+        x: 1780
+        y: 1100
+      positionAbsolute:
+        x: 1780
+        y: 1100
       selected: false
       sourcePosition: right
       targetPosition: left

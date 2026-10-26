@@ -152,10 +152,7 @@ class CreditPlan(BaseModel):
             return None
         hits = [course for course in self.courses if course.name and course.name in text]
         if hits:
-            # 先看"谁出现得更靠前"——问句通常把被问的课放在最前面，
-            # "已修过的课"跟在后面；位置相同再取更长的名字
-            # （"汽车车身设计" 与 "汽车设计" 同时命中时取前者）。
-            return min(hits, key=lambda course: (text.index(course.name), -len(course.name)))
+            return max(hits, key=lambda course: len(course.name))
         courses = self.course_map()
         codes = [code for code in _CODE_IN_TEXT.findall(text.upper()) if code in courses]
         if codes:

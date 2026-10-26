@@ -39,15 +39,15 @@ sys.path.insert(0, str(ROOT / "deploy"))
 
 OUT_FILE = Path(__file__).parent / "course-audit.chatflow.yml"
 
-#: 先修类问题的关键词（if-else 的 or 条件），命中任一即走 /prereq 分支。
-#: "能选" 一个词覆盖 能不能选 / 能否选 / 能选吗 / 还能选修吗 等常见问法；
-#: 早期只写了「能不能选」「能否选」，学生问「XX 能选吗」会掉进学分核算分支。
-PREREQ_KEYWORDS = ["先修", "前置", "能选", "可以选", "可不可以选", "选课条件"]
+#: 先修类问题的关键词（if-else 的 or 条件），命中任一即走 /prereq 分支
+PREREQ_KEYWORDS = ["先修", "前置", "能不能选", "可以选", "能否选"]
 #: 条款类问题的关键词（转专业、认定、免修等），走"检索条款"分支
 CLAUSE_KEYWORDS = ["转专业", "学分认定", "免修", "重修", "替代", "抵", "条例", "规定", "政策"]
 #: 核算类问题的关键词。v2 把它从默认分支变成显式分支，避免普通条款问题
 #: 也被误送进学分核算。
 AUDIT_KEYWORDS = ["毕业", "还差", "缺多少", "学分缺口", "已修学分", "总学分", "完成学分"]
+STUDY_PLAN_KEYWORDS = ["修读规划", "选课建议", "推荐课程", "下学期", "下个学期", "选什么课", "选哪些课", "怎么选课"]
+COURSE_INFO_KEYWORDS = ["算哪个模块", "属于什么模块", "所属模块", "哪个模块", "几学分", "多少学分", "学分是多少"]
 
 #: 知识检索结果 → 可读条款清单的代码节点脚本。
 #: 为什么用代码节点：Dify 的 answer 节点只能拼字符串，取不到数组里的字段；
@@ -90,6 +90,8 @@ import re
 
 AUDIT_WORDS = ("毕业", "还差", "缺多少", "学分缺口", "已修学分", "总学分", "完成学分", "修完", "已修", "学过", "通过")
 PREREQ_WORDS = ("先修", "前置", "能不能选", "可以选", "能否选")
+STUDY_PLAN_WORDS = ("修读规划", "选课建议", "推荐课程", "下学期", "下个学期", "选什么课", "选哪些课", "怎么选课")
+COURSE_INFO_WORDS = ("算哪个模块", "属于什么模块", "所属模块", "哪个模块", "几学分", "多少学分", "学分是多少")
 
 def main(model_text: str, query: str, form_completed: str) -> dict:
     raw = model_text or ""
@@ -104,8 +106,12 @@ def main(model_text: str, query: str, form_completed: str) -> dict:
 
     intent = str(data.get("intent") or "").lower()
     text = query or ""
-    if intent not in ("audit", "prereq", "clause"):
-        if any(word in text for word in PREREQ_WORDS):
+    if intent not in ("audit", "prereq", "clause", "study_plan", "course_info"):
+        if any(word in text for word in STUDY_PLAN_WORDS):
+            intent = "study_plan"
+        elif any(word in text for word in COURSE_INFO_WORDS):
+            intent = "course_info"
+        elif any(word in text for word in PREREQ_WORDS):
             intent = "prereq"
         elif any(word in text for word in AUDIT_WORDS):
             intent = "audit"
@@ -227,13 +233,11 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
                         "options": [],
                     },
                     {
-                        # 可选：填了才把「已修课程」存进档案；不填就是一次性核算。
-                        # 3–128 位字母/数字/_ . : -，服务端用同一正则校验。
                         "variable": "profile_id",
-                        "label": "档案标识（可选）",
-                        "description": "想跨会话记住已修课程时，自定一个固定标识（如学号或匿名昵称）；不填则只做一次性核算。",
+                        "label": "档案标识",
+                        "description": "首次自定一个固定标识（如学号或匿名昵称）；后续使用同一标识即可读取同一份课程档案。",
                         "type": "text-input",
-                        "required": False,
+                        "required": True,
                         "max_length": 128,
                         "options": [],
                     },
@@ -485,7 +489,7 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
                         "completion_params": {"temperature": 0},
                     },
                     "prompt_template": [
-                        {"role": "system", "text": "你是严格的工作流路由器。只输出 JSON，不要 Markdown 或解释。intent 只能是 audit、prereq、clause：询问毕业剩余/已修课程/课程修完后剩余学分为 audit；询问课程先修或能否选课为 prereq；其余培养方案条款为 clause。completed_courses 只能包含用户明确说已修完、已通过、已修的课程代码；不要猜测课程名称对应的代码。输出格式：{\\\"intent\\\":\\\"audit\\\",\\\"completed_courses\\\":[\\\"GE101\\\"]}"},
+                        {"role": "system", "text": "你是严格的工作流路由器。只输出 JSON，不要 Markdown 或解释。intent 只能是 audit、prereq、study_plan、course_info、clause：询问毕业剩余/已修课程/课程修完后剩余学分为 audit；询问课程先修或能否选课为 prereq；询问下学期选什么课、选课建议或修读规划为 study_plan；询问一门课属于哪个模块、多少学分或建议学期为 course_info；其余培养方案条款为 clause。completed_courses 只能包含用户明确说已修完、已通过、已修的课程代码；不要猜测课程名称对应的代码。输出格式：{\\\"intent\\\":\\\"audit\\\",\\\"completed_courses\\\":[\\\"GE101\\\"]}"},
                         {"role": "user", "text": "用户问题：{{#sys.query#}}\\n表单已修课程：{{#start.completed#}}"},
                     ],
                     "prompt_config": {"jinja2_variables": []},
@@ -525,9 +529,8 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
                 {"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": "清空"},
             ]},
             {"case_id": "study_plan", "logical_operator": "or", "conditions": [
-                {"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": "修读规划"},
-                {"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": "选课建议"},
-                {"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": "推荐课程"},
+                *[{"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": keyword} for keyword in STUDY_PLAN_KEYWORDS],
+                {"variable_selector": ["intent_parse", "intent"], "comparison_operator": "contains", "value": "study_plan"},
             ]},
             {"case_id": "profile", "logical_operator": "or", "conditions": [
                 {"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": "我的档案"},
@@ -535,6 +538,12 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
             ]},
             {"case_id": "true", "logical_operator": "and", "conditions": [{"variable_selector": ["intent_parse", "intent"], "comparison_operator": "contains", "value": "prereq"}]},
             {"case_id": "audit", "logical_operator": "and", "conditions": [{"variable_selector": ["intent_parse", "intent"], "comparison_operator": "contains", "value": "audit"}]},
+            # “毕业还差多少学分”同时含“多少学分”，必须优先走 audit；课程信息
+            # 仅处理带明确课程代码/名称的模块、学分和开课学期查询。
+            {"case_id": "course_info", "logical_operator": "or", "conditions": [
+                *[{"variable_selector": ["sys", "query"], "comparison_operator": "contains", "value": keyword} for keyword in COURSE_INFO_KEYWORDS],
+                {"variable_selector": ["intent_parse", "intent"], "comparison_operator": "contains", "value": "course_info"},
+            ]},
         ]
         nodes.extend([
             http_node(
@@ -568,6 +577,23 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
                 {"type": "answer", "title": "回答（修读规划）", "answer": "{{#study_plan.body#}}"},
                 1780,
                 700,
+                width=300,
+                height=140,
+            ),
+            http_node(
+                "course_info",
+                "查询课程信息",
+                "/course-info",
+                {"query": "{{#sys.query#}}", "format": "text"},
+                api_key,
+                1420,
+                1100,
+            ),
+            node(
+                "answer_course_info",
+                {"type": "answer", "title": "回答（课程信息）", "answer": "{{#course_info.body#}}"},
+                1780,
+                1100,
                 width=300,
                 height=140,
             ),
@@ -638,6 +664,8 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
             edge("profile", "answer_profile", "http-request", "answer"),
             edge("branch", "study_plan", "if-else", "http-request", handle="study_plan"),
             edge("study_plan", "answer_study_plan", "http-request", "answer"),
+            edge("branch", "course_info", "if-else", "http-request", handle="course_info"),
+            edge("course_info", "answer_course_info", "http-request", "answer"),
             edge("branch", "profile_manage", "if-else", "http-request", handle="profile_manage"),
             edge("profile_manage", "answer_profile_manage", "http-request", "answer"),
         ])
@@ -648,7 +676,7 @@ def build(api_key: str, dataset_id: str, *, v2: bool = False, smart: bool = Fals
             "icon": "📘",
             "icon_background": "#E0F2FE",
             "mode": "advanced-chat",
-            "name": "课径 · 可核算的培养方案问答 v8（精简回复版）" if intent else ("课径 · 可核算的培养方案问答 v3（智能版）" if smart else ("课径 · 可核算的培养方案问答 v2" if v2 else "课径 · 可核算的培养方案问答")),
+            "name": "课径 · 可核算的培养方案问答 v9（课程信息与修读规划）" if intent else ("课径 · 可核算的培养方案问答 v3（智能版）" if smart else ("课径 · 可核算的培养方案问答 v2" if v2 else "课径 · 可核算的培养方案问答")),
             "use_icon_as_answer_icon": False,
         },
         "dependencies": [],

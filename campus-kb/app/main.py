@@ -43,7 +43,6 @@ def build_index(settings: Settings, plan: CreditPlan | None = None) -> HybridInd
         embedder=settings.build_embedder(),
         fusion=settings.fusion,
         alpha=settings.alpha,
-        course_names={course.code: course.name for course in plan.courses} if plan else None,
     )
 
 

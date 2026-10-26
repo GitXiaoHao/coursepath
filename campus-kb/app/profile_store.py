@@ -9,7 +9,9 @@ from pathlib import Path
 
 from core.schema import CompletedCourse
 
-_PROFILE_ID_RE = re.compile(r"^[A-Za-z0-9_.:-]{3,128}$")
+# 档案标识由使用者自己设置。允许单字符标识，避免演示时填入 ``1`` 之类的
+# 新标识被接口拒绝；不同标识天然对应不同的、初始为空的档案。
+_PROFILE_ID_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 
 
 class ProfileStore:

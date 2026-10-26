@@ -13,6 +13,7 @@ tools:
   - tools/audit.yaml
   - tools/prereq.yaml
   - tools/study_plan.yaml
+  - tools/course_info.yaml
 extra:
   python:
     source: provider/course_audit.py

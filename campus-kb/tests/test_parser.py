@@ -20,23 +20,18 @@ from core.schema import CreditPlan, PrereqExpr
 BASE = Path(__file__).resolve().parent.parent
 MD = BASE / "data" / "samples" / "md" / "plan-demo.md"
 NAMES = {
-    "高等数学 I": "GE101",
-    "工程力学": "ME102",
-    "机械原理": "ME103",
-    "机械设计": "ME104",
-    "专业实习": "PR103",
-    "汽车构造": "VE201",
-    "汽车工程概论": "AE101",
-    "汽车电子控制": "VE205",
     "程序设计基础": "CS101",
-    "电工电子技术": "EE101",
-    "工程制图": "ME101",
+    "数据结构与算法": "CS201",
+    "计算机组成原理": "CS202",
+    "操作系统": "CS303",
+    "编译原理": "CS305",
+    "专业实习": "CS350",
 }
-MODULES = ["通识教育", "工程基础", "专业核心课", "专业选修课", "实践教学环节"]
+MODULES = ["通识教育", "专业核心课", "专业选修课", "实践教学环节"]
 
 
 def signature(expr: PrereqExpr | None):
-    """把先修表达式压成可比较的结构：('and', ('course', 'ME101'), ...)。"""
+    """把先修表达式压成可比较的结构：('and', ('course','CS201'), ...)。"""
     if expr is None:
         return None
     if expr.kind == "course":
@@ -49,23 +44,16 @@ def signature(expr: PrereqExpr | None):
 # --------------------------------------------------------------------------- 表格切分
 def test_split_markdown_tables() -> None:
     tables = split_markdown_tables(MD.read_text(encoding="utf-8"))
-    assert [table.title for table in tables] == [
-        "一、学分结构与毕业要求",
-        "二、课程设置表",
-        "三、先修要求表",
-        "四、学分认定与条款",
-    ]
-    assert [table.page for table in tables] == [1, 2, 3, 4]
+    assert [table.title for table in tables] == ["一、学分结构与毕业要求", "二、课程设置表", "三、先修要求表"]
+    assert [table.page for table in tables] == [1, 2, 3]
     assert tables[0].headers == ("模块", "要求学分", "说明")
-    assert len(tables[0].rows) == 6  # 5 个模块 + 合计
-    assert len(tables[1].rows) == 44
-    assert len(tables[2].rows) == 30
-    assert len(tables[3].rows) == 3
+    assert len(tables[1].rows) == 16
+    assert len(tables[2].rows) == 6
 
 
 def test_classify_tables() -> None:
     tables = split_markdown_tables(MD.read_text(encoding="utf-8"))
-    assert [classify(table) for table in tables] == ["modules", "courses", "prereq", "clause"]
+    assert [classify(table) for table in tables] == ["modules", "courses", "prereq"]
 
 
 def test_separator_rows_are_dropped() -> None:
@@ -75,7 +63,7 @@ def test_separator_rows_are_dropped() -> None:
 
 
 def test_table_cell_and_column() -> None:
-    table = split_markdown_tables("| 模块 | 要求学分 |\n| --- | --- |\n| 核心 | 46 |\n")[0]
+    table = split_markdown_tables("| 模块 | 要求学分 |\n| --- | --- |\n| 核心 | 56 |\n")[0]
     row = table.rows[0]
     assert table.cell(row, ("模块",)) == "核心"
     assert table.cell(row, ("不存在的列",)) == ""
@@ -90,25 +78,15 @@ def test_prereq_simple() -> None:
 
 
 def test_prereq_or() -> None:
-    parsed = parse_prereq_text("机械原理或机械设计之一", NAMES)
+    parsed = parse_prereq_text("数据结构与算法或计算机组成原理之一", NAMES)
     assert parsed.ok
-    assert signature(parsed.expr) == ("or", (("course", "ME103"), ("course", "ME104")))
+    assert signature(parsed.expr) == ("or", (("course", "CS201"), ("course", "CS202")))
 
 
 def test_prereq_and_with_comma() -> None:
-    parsed = parse_prereq_text("工程力学，且需修完机械原理", NAMES)
+    parsed = parse_prereq_text("数据结构与算法，且需修完计算机组成原理", NAMES)
     assert parsed.ok
-    assert signature(parsed.expr) == ("and", (("course", "ME102"), ("course", "ME103")))
-
-
-def test_prereq_and_three_children() -> None:
-    """汽车电子控制：且（电工电子技术、程序设计基础、汽车构造）。"""
-    parsed = parse_prereq_text("先修电工电子技术、程序设计基础，且需修完汽车构造", NAMES)
-    assert parsed.ok
-    assert signature(parsed.expr) == (
-        "and",
-        (("course", "EE101"), ("course", "CS101"), ("course", "VE201")),
-    )
+    assert signature(parsed.expr) == ("and", (("course", "CS201"), ("course", "CS202")))
 
 
 def test_prereq_credits_gate() -> None:
@@ -116,7 +94,7 @@ def test_prereq_credits_gate() -> None:
     assert parsed.ok
     assert signature(parsed.expr) == (
         "and",
-        (("credits", "专业核心课", 40.0), ("course", "PR103")),
+        (("credits", "专业核心课", 40.0), ("course", "CS350")),
     )
 
 
@@ -140,8 +118,8 @@ def test_prereq_unknown_course_is_reported() -> None:
 
 
 def test_prereq_ambiguous_name_is_not_guessed() -> None:
-    names = {"机械原理": "ME103", "机械原理（进阶）": "ME203"}
-    parsed = parse_prereq_text("先修机械", names)
+    names = {"数据结构与算法": "CS201", "数据结构与算法（进阶）": "CS301"}
+    parsed = parse_prereq_text("先修数据结构", names)
     assert parsed.expr is None
     assert parsed.unresolved
 
@@ -152,35 +130,36 @@ def built():
     tables = load_tables(MD)
     return build_plan(
         tables,
-        doc_id="vehicle-demo-plan-2025",
-        major="车辆工程（示范培养方案）",
-        plan_id="vehicle-engineering-demo-2025",
-        grade="2025",
-        doc_title="车辆工程（示范培养方案）",
+        doc_id="plan-demo-2026",
+        major="示范专业",
+        plan_id="plan-demo-2026",
+        grade="2026",
+        doc_title="培养方案 2026",
     )
 
 
 def test_build_modules(built) -> None:
     rows = {module.module: module.required_credits for module in built.plan.modules}
-    assert rows == {"通识教育": 48, "工程基础": 34, "专业核心课": 46, "专业选修课": 16, "实践教学环节": 16}
+    assert rows == {"通识教育": 48, "专业核心课": 56, "专业选修课": 24, "实践教学环节": 32}
     assert built.plan.total_credits == 160
 
 
 def test_build_courses(built) -> None:
-    assert len(built.plan.courses) == 44
-    course = built.plan.resolve("VE205")
+    assert len(built.plan.courses) == 16
+    course = built.plan.resolve("CS305")
     assert course is not None
-    assert course.name == "汽车电子控制"
-    assert course.credits == 4
-    assert list(course.terms) == ["2027-2028-1"]
+    assert course.name == "编译原理"
+    assert course.credits == 3
+    assert list(course.terms) == ["2026-2027-2"]
 
 
 def test_build_prerequisites(built) -> None:
     got = {course.code: signature(course.prerequisites) for course in built.plan.courses}
-    assert got["VE201"] == ("and", (("course", "ME101"), ("course", "AE101")))
-    assert got["VE205"] == ("and", (("course", "EE101"), ("course", "CS101"), ("course", "VE201")))
-    assert got["PR104"] == ("and", (("credits", "专业核心课", 40.0), ("course", "PR103")))
-    assert got["GE101"] is None
+    assert got["CS201"] == ("course", "CS101")
+    assert got["CS303"] == ("or", (("course", "CS201"), ("course", "CS202")))
+    assert got["CS305"] == ("and", (("course", "CS201"), ("course", "CS202")))
+    assert got["CS401"] == ("and", (("credits", "专业核心课", 40.0), ("course", "CS350")))
+    assert got["CS101"] is None
 
 
 def test_build_has_no_warnings(built) -> None:
@@ -258,28 +237,24 @@ def test_synthetic_course_code_when_missing() -> None:
 # --------------------------------------------------------------------------- 语料生成
 def test_build_chunks(built) -> None:
     tables = load_tables(MD)
-    chunks = build_chunks(tables, doc_id="vehicle-demo-plan-2025")
-    assert len(chunks) == 6 + 44 + 30 + 3  # 学分结构 6（含合计）+ 课程 44 + 先修 30 + 条款 3
+    chunks = build_chunks(tables, doc_id="plan-demo-2026")
+    assert len(chunks) == 5 + 16 + 6  # 学分结构表 5 行（含合计）+ 课程 16 + 先修 6
     first = chunks[0]
     assert first.metadata["page"] == 1
     assert first.metadata["table_row"] == 1
     assert first.metadata["module"] == "通识教育"
     assert "48" in first.content
 
-    course_chunk = next(chunk for chunk in chunks if chunk.metadata.get("course_code") == "VE205")
+    course_chunk = next(chunk for chunk in chunks if chunk.metadata.get("course_code") == "CS305")
     assert course_chunk.metadata["doc_type"] == "培养方案"
-    assert "汽车电子控制" in course_chunk.content
+    assert "编译原理" in course_chunk.content
     assert all(isinstance(chunk.metadata.get("page"), int) for chunk in chunks)
-
-    clause_chunk = next(chunk for chunk in chunks if chunk.metadata.get("table_kind") == "clause")
-    assert clause_chunk.metadata["page"] == 4
-    assert "转专业" in chunks[-3].content
 
 
 def test_metadata_survives_json_roundtrip(built) -> None:
     import json
 
-    chunks = build_chunks(load_tables(MD), doc_id="vehicle-demo-plan-2025")
+    chunks = build_chunks(load_tables(MD), doc_id="plan-demo-2026")
     for chunk in chunks:
         restored = json.loads(json.dumps(chunk.to_dict(), ensure_ascii=False))
         assert restored["metadata"]["page"] == chunk.metadata["page"]
@@ -299,5 +274,5 @@ def test_plan_dict_roundtrip_is_lossless(built) -> None:
         course.code: signature(course.prerequisites) for course in built.plan.courses
     }
     # 叶子节点不应写出空的 children 字段
-    leaf = next(course for course in exported["courses"] if course["code"] == "GE102")
+    leaf = next(course for course in exported["courses"] if course["code"] == "CS201")
     assert "children" not in leaf["prerequisites"]

@@ -1,0 +1,99 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "课径 · 当前端到端流程",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "all",
+      "entries": {
+        "frontend": { "label": "用户界面" },
+        "backend": { "label": "流程节点" },
+        "security": { "label": "决策门" },
+        "cloud": { "label": "自研服务" },
+        "database": { "label": "语料与档案" },
+        "external": { "label": "外部参与者" },
+        "messagebus": { "label": "分发产物" }
+      }
+    },
+    "output": ".archify/workflow-coursepath-20261022-170006/coursepath-flow.html"
+  },
+  "lanes": [
+    { "id": "student", "label": "学生端" },
+    { "id": "dify", "label": "Dify 应用层（未改源码）" },
+    { "id": "svc", "label": "自研服务 campus-kb" },
+    { "id": "corpus", "label": "语料与规则（随仓库开源）" },
+    { "id": "plugin", "label": "插件包（独立分发）", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "提问", "fromCol": 0, "toCol": 1 },
+    { "id": "evidence", "label": "找依据", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "decide", "label": "分流与核算", "fromCol": 4, "toCol": 4, "variant": "emphasis" },
+    { "id": "respond", "label": "作答", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["ask", "start", "kbnode", "retrieval", "code", "branch", "compute", "answer", "read"],
+  "nodes": [
+    { "id": "ask", "lane": "student", "col": 0, "type": "external", "label": "学生提问", "sublabel": "附已修课程代码", "icon": "person", "width": 184 },
+    { "id": "read", "lane": "student", "col": 5, "type": "frontend", "label": "阅读答案", "sublabel": "结论 + 过程 + 条款", "width": 176 },
+
+    { "id": "start", "lane": "dify", "col": 1, "type": "frontend", "label": "开始节点", "sublabel": "sys.query + completed + profile_id", "width": 176 },
+    { "id": "kbnode", "lane": "dify", "col": 2, "type": "backend", "label": "知识检索节点", "sublabel": "外部知识库 · top_k 4", "tag": "官方扩展点", "width": 176 },
+    { "id": "code", "lane": "dify", "col": 3, "type": "backend", "label": "代码节点", "sublabel": "条款整理：页码 + 行号 + 匹配度", "tag": "sandbox 内执行", "width": 176 },
+    { "id": "branch", "lane": "dify", "col": 4, "type": "security", "label": "意图分流", "sublabel": "先修 / 学分 / 修读规划 / 条款", "width": 176 },
+    { "id": "answer", "lane": "dify", "col": 5, "type": "backend", "label": "回答节点", "sublabel": "Markdown 直出", "width": 176 },
+
+        { "id": "retrieval", "lane": "svc", "col": 2, "type": "cloud", "label": "POST /retrieval", "sublabel": "BM25Plus + 意图 / 课程名加权", "tag": "外部知识库契约", "width": 184 },
+    { "id": "compute", "lane": "svc", "col": 4, "type": "cloud", "label": "核算与规划接口", "sublabel": "POST /audit · /prereq · /study-plan", "tag": "确定性代码，不经模型", "width": 208 },
+
+    { "id": "plan", "lane": "corpus", "col": 2, "type": "database", "label": "培养方案 + 命令条款表", "sublabel": "44 门课 / 5 模块 / 83 分块", "tag": "合成，无院校信息", "width": 184 },
+    { "id": "rules", "lane": "corpus", "col": 4, "type": "database", "label": "核算规则与评测集", "sublabel": "R1–R5 + 30 条用例", "width": 168 },
+
+    { "id": "plug", "lane": "plugin", "col": 5, "type": "messagebus", "label": "课径核算 .difypkg 0.2.1", "sublabel": "学分 / 先修 / 修读规划三工具", "tag": "装进 Dify 即用", "width": 192 }
+  ],
+  "edges": [
+    { "id": "ask-start", "from": "ask", "to": "start", "label": "问题 + 已修课程", "variant": "emphasis" },
+    { "id": "start-kb", "from": "start", "to": "kbnode", "variant": "default" },
+    { "id": "kb-call", "from": "kbnode", "to": "retrieval", "label": "调外部知识库", "variant": "emphasis" },
+    { "id": "hits-back", "from": "retrieval", "to": "code", "label": "命中条款", "variant": "default", "role": "return" },
+    { "id": "code-branch", "from": "code", "to": "branch", "variant": "default" },
+    { "id": "branch-compute", "from": "branch", "to": "compute", "label": "先修 / 学分 / 修读规划", "variant": "emphasis" },
+    { "id": "compute-answer", "from": "compute", "to": "answer", "label": "结论 + 计算过程", "variant": "emphasis" },
+    { "id": "branch-answer", "from": "branch", "to": "answer", "label": "条款类：只摘录", "variant": "dashed", "role": "branch" },
+    { "id": "answer-read", "from": "answer", "to": "read", "variant": "default" },
+    { "id": "plan-retrieval", "from": "plan", "to": "retrieval", "label": "语料", "variant": "dashed", "role": "async" },
+    { "id": "rules-compute", "from": "rules", "to": "compute", "label": "规则", "variant": "dashed", "role": "async" },
+    { "id": "rules-plug", "from": "rules", "to": "plug", "label": "内核同源：core 三模块随包复制", "variant": "dashed", "role": "async" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "零源码修改怎么落地",
+      "items": [
+        "DSL 导入生成 Chatflow，发布与 API Key 走控制台接口",
+        "外部知识库是平台原生功能：登记 endpoint + knowledge_id + API Key",
+        "内部服务靠 SSRF_PROXY_ALLOW_PRIVATE_DOMAINS=campus-kb 放行，未改 squid 模板",
+        "代码节点无外网，所以外部调用一律走 HTTP 请求节点"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "答案凭什么可信",
+      "items": [
+        "条款带页码、表格行号与匹配度（已截断到 0–1），可逐条回原文核对",
+        "学分、先修与修读规划都由确定性代码求值，模型不参与算术",
+        "校验：162 项 pytest、检索 Recall@1 0.692→1.000、核算 7/7、先修 10/10"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "四类问题怎么走",
+      "items": [
+        "还差多少学分 → /audit：分模块缺口 + R1/R4/R5 依据",
+        "这门课能不能选 → /prereq：先修表达式树求值，点名缺哪几门",
+        "下一步修什么 → /study-plan：按模块缺口排序并标注先修是否满足",
+        "转专业 / 免修 / 学分认定 → 条款分支：只摘原文，不做核算"
+      ]
+    }
+  ]
+}

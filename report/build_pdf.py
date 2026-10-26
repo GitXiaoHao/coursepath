@@ -48,11 +48,11 @@ COVER = """
 """
 
 CSS = """
-@page { size: A4; margin: 15mm 15mm 14mm 15mm; }
+@page { size: A4; margin: 18mm 16mm 16mm 16mm; }
 html { -webkit-print-color-adjust: exact; }
 body {
   font-family: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "SimSun", sans-serif;
-  font-size: 10.2pt; line-height: 1.5; color: #1b1b1b; margin: 0;
+  font-size: 10.6pt; line-height: 1.68; color: #1b1b1b; margin: 0;
 }
 .cover { page-break-after: always; padding-top: 46mm; text-align: center; }
 .cover-kicker { font-size: 10pt; color: #555; letter-spacing: .06em; }
@@ -60,22 +60,22 @@ body {
 .cover-sub { font-size: 14pt; color: #333; margin-bottom: 22mm; }
 .cover-meta p { font-size: 10pt; color: #444; margin: 3mm 0; }
 h1 { font-size: 17pt; margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 1.5pt solid #1f6feb; }
-h2 { font-size: 13pt; margin: 7mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 0.8pt solid #d0d7de; page-break-after: avoid; }
+h2 { font-size: 14pt; margin: 12mm 0 4mm; padding-bottom: 1.5mm; border-bottom: 0.8pt solid #d0d7de; page-break-after: avoid; }
 h2:first-of-type { page-break-before: auto; }
-h3 { font-size: 11.4pt; margin: 4.5mm 0 2mm; page-break-after: avoid; }
+h3 { font-size: 11.8pt; margin: 6mm 0 2.5mm; page-break-after: avoid; }
 h4 { font-size: 10.6pt; margin: 4mm 0 1.5mm; page-break-after: avoid; }
-p { margin: 0 0 2.4mm; text-align: justify; }
-ul, ol { margin: 0 0 2.6mm; padding-left: 5.5mm; }
-li { margin-bottom: 1.0mm; }
+p { margin: 0 0 3.2mm; text-align: justify; }
+ul, ol { margin: 0 0 3.4mm; padding-left: 6mm; }
+li { margin-bottom: 1.5mm; }
 code { font-family: Consolas, "Courier New", monospace; font-size: 9pt;
        background: #f2f4f7; padding: 0 1pt; border-radius: 2pt; }
 pre { background: #f6f8fa; border: 0.6pt solid #e1e4e8; border-radius: 3pt;
       padding: 2.5mm 3mm; font-size: 8.6pt; line-height: 1.35; white-space: pre-wrap;
       page-break-inside: avoid; }
 pre code { background: none; padding: 0; font-size: 8.6pt; }
-table { width: 100%; border-collapse: collapse; margin: 2mm 0 3.5mm; font-size: 8.6pt;
+table { width: 100%; border-collapse: collapse; margin: 2.5mm 0 4.5mm; font-size: 9pt;
         page-break-inside: auto; }
-th, td { border: 0.5pt solid #c9d1d9; padding: 1.2mm 1.6mm; vertical-align: top;
+th, td { border: 0.5pt solid #c9d1d9; padding: 1.6mm 2mm; vertical-align: top;
          word-break: break-word; text-align: left; }
 th { background: #eef2f7; font-weight: 600; }
 tr { page-break-inside: avoid; }
@@ -108,7 +108,7 @@ def render(md_text: str) -> str:
     if body.startswith("<h1") and first_h1 != -1:
         body = body[first_h1 + len("</h1>"):].lstrip()
     # 图片统一限高（Chromium 对 max-height + width:auto 不生效，需显式高度）
-    body = body.replace("<img ", '<img style="height:86mm;width:auto;" ')
+    body = body.replace("<img ", '<img style="height:104mm;width:auto;" ')
     return HEAD + COVER + body + TAIL
 
 

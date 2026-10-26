@@ -57,6 +57,13 @@ class PrereqRequest(BaseModel):
     format: Literal["json", "text", "brief"] = "json"
 
 
+class CourseInfoRequest(BaseModel):
+    """按课程代码或名称查询培养方案中的确定性课程信息。"""
+
+    query: str
+    format: Literal["json", "text"] = "json"
+
+
 def _merge_completed(payload_completed: list[CompletedCourse], completed_text: str | None, plan: CreditPlan) -> list[CompletedCourse]:
     """合并结构化与文本两种输入，并按培养方案补全缺失学分。
 
@@ -109,6 +116,26 @@ def _get_plan(request: Request, plan_id: str | None):
     return plan
 
 
+def _course_info_summary(course) -> str:
+    """把课程目录中的事实组织成短答，避免把问题误送入通用检索。"""
+    lines = [
+        f"### {course.name}（{course.code}）",
+        f"- 所属模块：{course.module or '培养方案未标注'}",
+        f"- 学分：{course.credits:g} 学分",
+    ]
+    if course.terms:
+        lines.append(f"- 建议开课学期：{'、'.join(course.terms)}")
+    if course.source:
+        location = []
+        if course.source.page:
+            location.append(f"第 {course.source.page} 页")
+        if course.source.table_row:
+            location.append(f"第 {course.source.table_row} 行")
+        origin = course.source.quote or "课程目录"
+        lines.append(f"\n依据：培养方案课程目录{'（' + '，'.join(location) + '）' if location else ''}：{origin}")
+    return "\n".join(lines)
+
+
 @router.post("/audit", summary="学分缺口核算")
 def audit(payload: AuditRequest, request: Request, authorization: str | None = Header(default=None)):
     settings = request.app.state.settings
@@ -128,6 +155,30 @@ def audit(payload: AuditRequest, request: Request, authorization: str | None = H
     body = result.to_dict()
     body["target"] = payload.target.model_dump() if payload.target else None
     return body
+
+
+@router.post("/course-info", summary="查询课程所属模块、学分与建议开课学期")
+def course_info(payload: CourseInfoRequest, request: Request, authorization: str | None = Header(default=None)):
+    check_bearer(request.app.state.settings, authorization)
+    plan = _get_plan(request, None)
+    course = plan.resolve_in_text(payload.query)
+    if course is None:
+        message = "未识别到唯一课程。请提供课程代码（如 CS101）或完整课程名称。"
+        if payload.format == "text":
+            return PlainTextResponse(f"### 课程信息\n{message}")
+        return {"found": False, "message": message}
+    result = {
+        "found": True,
+        "code": course.code,
+        "name": course.name,
+        "module": course.module,
+        "credits": course.credits,
+        "terms": course.terms,
+        "source": course.source.model_dump() if course.source else None,
+    }
+    if payload.format == "text":
+        return PlainTextResponse(_course_info_summary(course))
+    return result
 
 
 @router.post("/prereq", summary="先修链检查")

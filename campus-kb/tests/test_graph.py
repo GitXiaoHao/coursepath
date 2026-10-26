@@ -80,36 +80,35 @@ def test_credits_node_missing_module_counts_as_zero() -> None:
 
 
 def test_check_prerequisites_direct(plan: CreditPlan) -> None:
-    # VE205 汽车电子控制：且（EE101、CS101、VE201）
-    report = check_prerequisites(plan, "VE205", ctx("EE101"))
+    report = check_prerequisites(plan, "CS305", ctx("CS101"))
     assert report.ok is False
-    assert {blocker["course_code"] for blocker in report.direct} == {"CS101", "VE201"}
-    assert report.target["course_code"] == "VE205"
+    assert {blocker["course_code"] for blocker in report.direct} == {"CS201", "CS202"}
+    assert report.target["course_code"] == "CS305"
 
 
 def test_check_prerequisites_passes_when_all_met(plan: CreditPlan) -> None:
-    report = check_prerequisites(plan, "VE205", ctx("EE101", "CS101", "VE201"))
+    report = check_prerequisites(plan, "CS305", ctx("CS101", "CS201", "CS202"))
     assert report.ok is True
     assert report.direct == []
 
 
 def test_check_prerequisites_resolves_by_name(plan: CreditPlan) -> None:
-    report = check_prerequisites(plan, "汽车电子控制", ctx("EE101", "CS101", "VE201"))
-    assert report.target["course_code"] == "VE205"
+    report = check_prerequisites(plan, "编译原理", ctx("CS201", "CS202"))
+    assert report.target["course_code"] == "CS305"
     assert report.ok is True
 
 
 def test_check_prerequisites_indirect_chain(plan: CreditPlan) -> None:
-    """一门先修都没修时，应指出更上游的 GE101（EE101 → GE103 → GE101）。"""
-    report = check_prerequisites(plan, "VE205", ctx())
+    """一门先修都没修时，应指出更上游的 CS101（间接阻塞）。"""
+    report = check_prerequisites(plan, "CS305", ctx())
     indirect_codes = {blocker["course_code"] for blocker in report.indirect}
-    assert "GE101" in indirect_codes
+    assert "CS101" in indirect_codes
     assert report.chain, "应给出先修路径"
-    assert all(path[0] == "VE205" for path in report.chain)
+    assert all(path[0] == "CS305" for path in report.chain)
 
 
 def test_check_prerequisites_graduation_design_needs_credits_and_internship(plan: CreditPlan) -> None:
-    report = check_prerequisites(plan, "PR104", ctx(earned={"专业核心课": 20}))
+    report = check_prerequisites(plan, "CS401", ctx(earned={"专业核心课": 20}))
     kinds = {blocker.get("kind") for blocker in report.direct}
     assert kinds == {"credits", "course"}
     assert report.ok is False
@@ -117,7 +116,7 @@ def test_check_prerequisites_graduation_design_needs_credits_and_internship(plan
 
 def test_check_prerequisites_credits_gate_can_pass(plan: CreditPlan) -> None:
     report = check_prerequisites(
-        plan, "PR104", ctx("PR103", earned={"专业核心课": 44})
+        plan, "CS401", ctx("CS350", earned={"专业核心课": 44})
     )
     assert report.ok is True
 

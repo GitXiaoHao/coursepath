@@ -1,10 +1,10 @@
-{"id": "P1", "desc": "汽车构造：两门先修全部满足", "course": "VE201", "completed": ["ME101", "AE101"], "expect": {"ok": true}}
-{"id": "P2", "desc": "汽车构造：只修了工程制图", "course": "VE201", "completed": ["ME101"], "expect": {"ok": false, "missing": ["AE101"]}}
-{"id": "P3", "desc": "毕业设计：核心课满 40 学分且实习完成", "course": "PR104", "completed": ["VE201", "VE202", "VE203", "VE204", "VE205", "VE206", "VE207", "VE208", "VE209", "VE210", "VE211", "VE212", "PR103"], "expect": {"ok": true}}
-{"id": "P4", "desc": "毕业设计：核心学分不足且没做专业实习（双阻塞）", "course": "PR104", "completed": ["VE201", "VE202", "VE203", "VE204", "VE205", "VE206", "VE207", "VE208", "VE209", "VE210", "VE211"], "expect": {"ok": false, "missing": ["PR103"], "kinds": ["credits"]}}
-{"id": "P5", "desc": "汽车电子控制：三门先修缺一问", "course": "VE205", "completed": ["EE101", "CS101"], "expect": {"ok": false, "missing": ["VE201"]}}
-{"id": "P6", "desc": "汽车电子控制：一门先修都没修", "course": "VE205", "completed": [], "expect": {"ok": false, "missing": ["EE101", "CS101", "VE201"]}}
-{"id": "P7", "desc": "汽车底盘设计：先修汽车设计已修", "course": "VE209", "completed": ["VE203"], "expect": {"ok": true}}
-{"id": "P8", "desc": "汽车底盘设计：只修了机械设计，缺汽车设计", "course": "VE209", "completed": ["ME104"], "expect": {"ok": false, "missing": ["VE203"]}}
-{"id": "P9", "desc": "方案里不存在的课程要如实回答解析失败", "course": "ZZ999", "completed": [], "expect": {"ok": false, "resolved": false}}
-{"id": "P10", "desc": "高等数学 I 无先修要求", "course": "GE101", "completed": [], "expect": {"ok": true}}
+{"id": "P1", "desc": "编译原理：三门先修全部满足", "course": "CS305", "completed": ["CS101", "CS201", "CS202"], "expect": {"ok": true}}
+{"id": "P2", "desc": "编译原理：只修了程序设计基础", "course": "CS305", "completed": ["CS101"], "expect": {"ok": false, "missing": ["CS201", "CS202"]}}
+{"id": "P3", "desc": "操作系统：或关系满足其一", "course": "CS303", "completed": ["CS202"], "expect": {"ok": true}}
+{"id": "P4", "desc": "操作系统：两个分支都不满足（or 给出最省力路径）", "course": "CS303", "completed": ["CS101"], "expect": {"ok": false}}
+{"id": "P5", "desc": "按名称查询同样可用", "course": "编译原理", "completed": ["CS101", "CS201", "CS202"], "expect": {"ok": true}}
+{"id": "P6", "desc": "毕业设计：核心课学分不足 40 且未实习", "course": "CS401", "completed": ["CS101"], "expect": {"ok": false, "kinds": ["credits", "course"]}}
+{"id": "P7", "desc": "毕业设计：实习已完成但核心课仍不足", "course": "CS401", "completed": ["CS350", "CS101", "CS201", "CS202", "CS303", "CS305", "CS310", "CS320", "CS330"], "expect": {"ok": false}}
+{"id": "P8", "desc": "无先修要求的课程", "course": "CS101", "completed": [], "expect": {"ok": true}}
+{"id": "P9", "desc": "不存在的课程不能被猜出来", "course": "量子力学", "completed": [], "expect": {"ok": false, "resolved": false}}
+{"id": "P10", "desc": "选修课先修满足", "course": "EL201", "completed": ["CS201"], "expect": {"ok": true}}

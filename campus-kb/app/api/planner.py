@@ -56,8 +56,9 @@ def _summary(candidates: list[dict], audit) -> str:
         lines.append("以下课程当前满足已登记的先修条件，并按所属模块缺口与课程学分排序：")
         for row in candidates:
             gap = f"该模块还缺 {row['module_gap']:g} 学分" if row["module_gap"] > 0 else "所属模块当前无学分缺口"
-            lines.append(f"- {row['name']}（{row['code']}，{row['credits']:g} 学分，{row['module']}；{gap}）")
-    lines.append(f"\n当前还差 {audit.remaining_credits:g} 学分。此结果不含实际上课学期、容量、时间冲突和教务限制，不能替代正式选课结果。")
+            terms = f"；目录建议开课：{'、'.join(row['terms'])}" if row["terms"] else ""
+            lines.append(f"- {row['name']}（{row['code']}，{row['credits']:g} 学分，{row['module']}；{gap}{terms}）")
+    lines.append(f"\n当前还差 {audit.remaining_credits:g} 学分。以上是按培养方案可修条件生成的候选，需再以本学期实际开课、容量、时间冲突和教务限制为准。")
     return "\n".join(lines)
 
 
