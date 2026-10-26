@@ -1,8 +1,0 @@
-公开代码仓库（Apache-2.0）：
-https://github.com/GitXiaoHao/coursepath
-
-其中可直接复用的插件包：
-dify-plugin/dist/course_audit-0.2.1.difypkg（安装后在工作流中调用 credit_audit / prereq_check）
-
-插件使用说明（安装步骤、期望输出、自定义培养方案写法）：
-https://github.com/GitXiaoHao/coursepath/blob/main/docs/08-插件使用指南.md
