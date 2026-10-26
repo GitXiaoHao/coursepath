@@ -17,6 +17,7 @@ deploy/dify/
 deploy/**/.env
 .tools/
 *.faiss
+deploy/*.log
 
 # 本地学生课程档案；发布插件和代码时绝不携带个人修读记录
 **/data/profiles/*.sqlite3
@@ -24,6 +25,15 @@ deploy/**/.env
 
 # 本地探索记录（含临时凭据，不入库）
 .explore/
+
+# 非代码材料：设计文档 / 技术报告 / 演示视频 / 提交材料 / 流程图
+# 仅本地留存，不随仓库发布
+docs/
+report/
+video/
+提交材料/
+deliverables/
+.archify/
 
 # 构建中间产物
 video/.build/
